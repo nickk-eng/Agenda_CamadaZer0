@@ -1,0 +1,2569 @@
+<!DOCTYPE html>
+<html lang="pt-BR" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Agenda CamadaZer0 — Pedidos e entregas da impressão 3D</title>
+  <!-- Fonte Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <!-- Tailwind CSS via CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'system-ui', 'sans-serif'],
+          },
+          colors: {
+            brand: {
+              purple: '#9619c7',
+              purpleHover: '#ab24e0',
+              lilac: '#bf74fc',
+              dark: '#18191c',
+              surface: '#222222',
+              column: '#101204',
+              card: '#22272b',
+              cardHover: '#2c333a',
+            }
+          }
+        }
+      }
+    };
+  </script>
+  <style>
+    /* Estilos globais e barras de rolagem personalizadas */
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+      margin: 0;
+      padding: 0;
+      overflow-x: hidden;
+      background-color: #18191c;
+      color: #e2e8f0;
+    }
+
+    /* Temas de plano de fundo */
+    .bg-theme-default {
+      background-color: #1d2125;
+      background-image: radial-gradient(circle at 15% 15%, rgba(150, 25, 199, 0.08), transparent 40%),
+                        radial-gradient(circle at 85% 85%, rgba(191, 116, 252, 0.06), transparent 40%);
+    }
+
+    .bg-theme-workbench {
+      background-color: #18191c;
+      background-image:
+        linear-gradient(135deg, rgba(24, 25, 28, 0.92) 0%, rgba(34, 28, 42, 0.88) 50%, rgba(20, 22, 27, 0.95) 100%),
+        radial-gradient(ellipse at 70% 25%, rgba(253, 224, 71, 0.14) 0%, transparent 55%),
+        radial-gradient(ellipse at 25% 75%, rgba(150, 25, 199, 0.22) 0%, transparent 60%);
+    }
+
+    .bg-theme-purple {
+      background-color: #140c1f;
+      background-image:
+        radial-gradient(circle at 20% 20%, rgba(150, 25, 199, 0.28) 0%, transparent 48%),
+        radial-gradient(circle at 80% 80%, rgba(191, 116, 252, 0.18) 0%, transparent 50%),
+        linear-gradient(180deg, #170e24 0%, #110a1a 100%);
+    }
+
+    /* Scrollbar customizada estilo Trello */
+    ::-webkit-scrollbar {
+      width: 8px;
+      height: 8px;
+    }
+    ::-webkit-scrollbar-track {
+      background: rgba(255, 255, 255, 0.04);
+      border-radius: 9999px;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.18);
+      border-radius: 9999px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: rgba(191, 116, 252, 0.5);
+    }
+
+    /* Feedback visual de Drag and Drop */
+    .card-dragging {
+      opacity: 0.45;
+      transform: rotate(1.5deg) scale(0.98);
+      border: 1px dashed #bf74fc !important;
+    }
+
+    .drop-placeholder {
+      height: 56px;
+      border-radius: 0.5rem;
+      border: 2px dashed #bf74fc;
+      background: rgba(150, 25, 199, 0.14);
+      margin-bottom: 0.5rem;
+      transition: all 0.15s ease;
+      pointer-events: none;
+    }
+
+    .column-drag-over {
+      box-shadow: 0 0 0 2px rgba(191, 116, 252, 0.55);
+    }
+
+    /* Animação suave para modais e toasts */
+    @keyframes fadeSlideUp {
+      from {
+        opacity: 0;
+        transform: translateY(10px) scale(0.98);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+      }
+    }
+
+    .animate-modal {
+      animation: fadeSlideUp 0.18s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+  </style>
+</head>
+<body class="bg-theme-default min-h-screen flex flex-col text-slate-100 select-none sm:select-auto">
+
+  <!-- ==================== NAVBAR SUPERIOR FIXA ==================== -->
+  <header class="sticky top-0 z-40 bg-[#16181d]/95 backdrop-blur-md border-b border-white/10 px-3 sm:px-5 py-2.5">
+    <div class="max-w-[1920px] mx-auto flex flex-wrap items-center justify-between gap-2.5">
+      
+      <!-- Logo & Marca CamadaZer0 -->
+      <div class="flex items-center gap-3">
+        <button onclick="switchTab('board')" class="flex items-center gap-2.5 group focus:outline-none" title="Ir para o Quadro Principal">
+          <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-[#9619c7] to-[#6b0f91] flex items-center justify-center shadow-lg shadow-[#9619c7]/30 border border-[#bf74fc]/40 group-hover:scale-105 transition-transform">
+            <!-- Ícone Cubo / Camadas 3D SVG -->
+            <svg class="w-5 h-5 text-[#bf74fc]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 2L2 7l10 5 10-5-10-5z" fill="rgba(191,116,252,0.22)"/>
+              <path d="M2 12l10 5 10-5" />
+              <path d="M2 17l10 5 10-5" />
+            </svg>
+          </div>
+          <div class="text-left">
+            <div class="flex items-center gap-1.5">
+              <span class="font-extrabold tracking-tight text-white text-base sm:text-lg leading-none">
+                Agenda <span class="text-[#bf74fc]">CamadaZer0</span>
+              </span>
+            </div>
+            <span class="hidden md:block text-[11px] text-slate-400 font-medium mt-0.5">Gestão de Vendas & Impressão 3D</span>
+          </div>
+        </button>
+      </div>
+
+      <!-- Busca em tempo real + Botão + Criar -->
+      <div class="flex items-center gap-2 flex-1 max-w-2xl order-3 lg:order-2 w-full lg:w-auto">
+        <div class="relative flex-1">
+          <svg class="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-4.35-4.35M17 11A6 6 0 115 11a6 6 0 0112 0z" />
+          </svg>
+          <input
+            id="searchInput"
+            type="text"
+            placeholder="Pesquisar pedidos, clientes, etiquetas..."
+            class="w-full bg-[#22272b] hover:bg-[#282e33] focus:bg-[#282e33] text-sm text-white placeholder-slate-400 pl-9 pr-8 py-1.5 rounded-lg border border-white/10 focus:border-[#bf74fc] focus:outline-none transition-colors"
+            oninput="handleSearch(this.value)"
+          />
+          <button
+            id="clearSearchBtn"
+            onclick="clearSearch()"
+            class="hidden absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white text-xs font-bold px-1"
+            title="Limpar busca"
+          >✕</button>
+        </div>
+
+        <button
+          onclick="openQuickCreateModal()"
+          class="bg-[#9619c7] hover:bg-[#ab24e0] active:scale-[0.98] text-white font-semibold text-sm px-3.5 py-1.5 rounded-lg shadow-md shadow-[#9619c7]/30 flex items-center gap-1.5 transition-all shrink-0 cursor-pointer"
+        >
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
+          </svg>
+          <span>Criar</span>
+        </button>
+      </div>
+
+      <!-- Filtro rápido + Backup JSON + Avatar NM -->
+      <div class="flex items-center gap-2 order-2 lg:order-3">
+        <!-- Seletor de Filtro por Etiqueta/Canal -->
+        <div class="relative">
+          <select
+            id="labelFilterSelect"
+            onchange="handleLabelFilter(this.value)"
+            aria-label="Filtrar por Etiqueta ou Canal"
+            class="bg-[#22272b] hover:bg-[#2c333a] text-xs sm:text-sm text-slate-200 font-medium px-2.5 py-1.5 rounded-lg border border-white/10 focus:border-[#bf74fc] focus:outline-none cursor-pointer"
+          >
+            <option value="ALL">Filtro: Todos</option>
+            <option value="Retirada">🟣 Retirada</option>
+            <option value="Correios">🔵 Correios</option>
+            <option value="Shopee">🟠 Shopee</option>
+            <option value="Marketplace">🩵 Marketplace</option>
+            <option value="Site">🔷 Site</option>
+            <option value="Urgente">🔴 Urgente</option>
+          </select>
+        </div>
+
+        <!-- Botão Exportar JSON -->
+        <button
+          onclick="exportJSON()"
+          title="Exportar backup dos pedidos em JSON"
+          class="hidden sm:flex items-center gap-1.5 bg-[#22272b] hover:bg-[#2c333a] text-slate-200 text-xs font-medium px-2.5 py-1.5 rounded-lg border border-white/10 transition-colors cursor-pointer"
+        >
+          <svg class="w-3.5 h-3.5 text-[#bf74fc]" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5 5-5M12 15V3" />
+          </svg>
+          <span>Exportar</span>
+        </button>
+
+        <!-- Botão Importar JSON -->
+        <label
+          title="Importar backup JSON"
+          class="hidden sm:flex items-center gap-1.5 bg-[#22272b] hover:bg-[#2c333a] text-slate-200 text-xs font-medium px-2.5 py-1.5 rounded-lg border border-white/10 transition-colors cursor-pointer"
+        >
+          <svg class="w-3.5 h-3.5 text-[#bf74fc]" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M17 8l-5-5-5 5M12 3v12" />
+          </svg>
+          <span>Importar</span>
+          <input type="file" id="importJsonInput" accept=".json" class="hidden" onchange="importJSON(event)" />
+        </label>
+
+        <!-- Menu Mais Opções Mobile / Reset -->
+        <div class="relative">
+          <button
+            onclick="toggleUserMenu()"
+            id="avatarBtn"
+            title="Menu da Conta e Backup"
+            class="w-8 h-8 rounded-full bg-gradient-to-tr from-[#9619c7] to-[#bf74fc] text-white font-bold text-xs flex items-center justify-center shadow-md ring-2 ring-white/15 hover:ring-[#bf74fc] transition-all cursor-pointer"
+          >
+            NM
+          </button>
+          <!-- Dropdown do Avatar -->
+          <div id="userDropdown" class="hidden absolute right-0 mt-2 w-60 bg-[#22272b] border border-white/15 rounded-xl shadow-2xl py-2 z-50 text-sm">
+            <div class="px-3.5 py-2 border-b border-white/10">
+              <p class="font-semibold text-white">Estúdio CamadaZer0</p>
+              <p class="text-xs text-slate-400">Salvamento automático ativo</p>
+            </div>
+            <button onclick="exportJSON(); toggleUserMenu();" class="w-full text-left px-3.5 py-2 hover:bg-white/10 text-slate-200 flex items-center gap-2">
+              <span>📥</span> Exportar Backup (JSON)
+            </button>
+            <label class="w-full text-left px-3.5 py-2 hover:bg-white/10 text-slate-200 flex items-center gap-2 cursor-pointer">
+              <span>📤</span> Importar Backup (JSON)
+              <input type="file" accept=".json" class="hidden" onchange="importJSON(event); toggleUserMenu();" />
+            </label>
+            <div class="border-t border-white/10 my-1"></div>
+            <button onclick="confirmResetBoard(); toggleUserMenu();" class="w-full text-left px-3.5 py-2 hover:bg-rose-500/20 text-rose-300 flex items-center gap-2">
+              <span>🔄</span> Restaurar quadro padrão
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- ==================== BARRA SECUNDÁRIA DO QUADRO ==================== -->
+  <section class="bg-black/25 backdrop-blur-sm border-b border-white/10 px-3 sm:px-5 py-2.5">
+    <div class="max-w-[1920px] mx-auto flex flex-wrap items-center justify-between gap-3">
+      
+      <!-- Título Editável do Quadro -->
+      <div class="flex items-center gap-2.5">
+        <div class="p-1.5 rounded-lg bg-[#9619c7]/20 border border-[#9619c7]/40 text-[#bf74fc]">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <rect x="3" y="3" width="7" height="18" rx="1.5" />
+            <rect x="14" y="3" width="7" height="11" rx="1.5" />
+          </svg>
+        </div>
+        <h1
+          id="boardTitleDisplay"
+          contenteditable="true"
+          spellcheck="false"
+          onblur="saveBoardTitle(this.innerText)"
+          onkeydown="if(event.key==='Enter'){event.preventDefault(); this.blur();}"
+          title="Clique para editar o nome do quadro"
+          class="text-base sm:text-lg font-bold text-white px-2 py-0.5 rounded-md hover:bg-white/10 focus:bg-[#22272b] focus:outline-none focus:ring-2 focus:ring-[#bf74fc] transition-colors cursor-text"
+        >Pedidos e entregas da impressão 3D</h1>
+      </div>
+
+      <!-- Indicadores Rápidos (KPIs) + Seletor de Fundo -->
+      <div class="flex flex-wrap items-center gap-2 sm:gap-3">
+        <!-- KPI: Pedidos Ativos -->
+        <div class="flex items-center gap-1.5 bg-[#16181d]/80 border border-white/10 px-2.5 py-1 rounded-lg text-xs">
+          <span class="w-2 h-2 rounded-full bg-[#bf74fc]"></span>
+          <span class="text-slate-400">Ativos:</span>
+          <span id="kpiActiveCount" class="font-bold text-white">0</span>
+        </div>
+
+        <!-- KPI: Entregas Hoje -->
+        <div class="flex items-center gap-1.5 bg-[#16181d]/80 border border-white/10 px-2.5 py-1 rounded-lg text-xs">
+          <span class="w-2 h-2 rounded-full bg-amber-400"></span>
+          <span class="text-slate-400">Hoje:</span>
+          <span id="kpiTodayCount" class="font-bold text-amber-300">0</span>
+        </div>
+
+        <!-- KPI: Valor Total R$ -->
+        <div class="flex items-center gap-1.5 bg-[#16181d]/80 border border-white/10 px-2.5 py-1 rounded-lg text-xs">
+          <span class="text-emerald-400 font-bold">R$</span>
+          <span class="text-slate-400 hidden sm:inline">Pedidos:</span>
+          <span id="kpiTotalValue" class="font-bold text-emerald-300">R$ 0,00</span>
+        </div>
+
+        <!-- Seletor de Tema de Fundo -->
+        <div class="flex items-center bg-[#16181d]/90 border border-white/10 rounded-lg p-0.5 text-xs">
+          <button
+            onclick="setBackgroundTheme('default')"
+            data-theme-btn="default"
+            title="Fundo Escuro Padrão (#222222)"
+            class="px-2 py-1 rounded-md font-medium transition-colors cursor-pointer"
+          >Escuro</button>
+          <button
+            onclick="setBackgroundTheme('workbench')"
+            data-theme-btn="workbench"
+            title="Fundo Bancada 3D Estilizada"
+            class="px-2 py-1 rounded-md font-medium transition-colors cursor-pointer"
+          >Bancada 3D</button>
+          <button
+            onclick="setBackgroundTheme('purple')"
+            data-theme-btn="purple"
+            title="Fundo Roxo Profundo CamadaZer0"
+            class="px-2 py-1 rounded-md font-medium transition-colors cursor-pointer"
+          >Roxo</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==================== ÁREA PRINCIPAL DE CONTEÚDO ==================== -->
+  <main class="flex-1 flex flex-col overflow-hidden pb-20">
+    
+    <!-- VISÃO 1: QUADRO KANBAN -->
+    <div id="viewBoard" class="flex-1 overflow-x-auto overflow-y-hidden px-3 sm:px-5 pt-4 pb-4">
+      <div id="columnsContainer" class="flex items-start gap-3.5 h-full min-h-[calc(100vh-195px)]">
+        <!-- Colunas renderizadas dinamicamente via JavaScript -->
+      </div>
+    </div>
+
+    <!-- VISÃO 2: PLANEJADOR POR DATAS DE ENTREGA -->
+    <div id="viewPlanner" class="hidden flex-1 overflow-y-auto px-3 sm:px-6 pt-5 pb-8">
+      <div class="max-w-6xl mx-auto">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-5">
+          <div>
+            <h2 class="text-xl font-bold text-white flex items-center gap-2">
+              <span class="text-[#bf74fc]">📅</span> Planejador de Entregas & Produção
+            </h2>
+            <p class="text-xs sm:text-sm text-slate-400">Pedidos organizados automaticamente pelo prazo de entrega definido em cada cartão.</p>
+          </div>
+          <button
+            onclick="openQuickCreateModal()"
+            class="self-start sm:self-auto bg-[#9619c7] hover:bg-[#ab24e0] text-white text-xs sm:text-sm font-semibold px-3.5 py-2 rounded-lg shadow transition-colors cursor-pointer"
+          >
+            + Agendar Novo Pedido
+          </button>
+        </div>
+
+        <div id="plannerGrid" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+          <!-- Colunas do planejador renderizadas dinamicamente -->
+        </div>
+      </div>
+    </div>
+
+    <!-- VISÃO 3: CAIXA DE ENTRADA (RASCUNHOS WHATSAPP / DIRECT) -->
+    <div id="viewInbox" class="hidden flex-1 overflow-y-auto px-3 sm:px-6 pt-5 pb-8">
+      <div class="max-w-3xl mx-auto">
+        <div class="bg-[#16181d] border border-white/10 rounded-2xl p-4 sm:p-6 shadow-xl mb-5">
+          <div class="flex items-center gap-2.5 mb-2">
+            <span class="w-8 h-8 rounded-lg bg-[#9619c7]/25 border border-[#bf74fc]/40 flex items-center justify-center text-[#bf74fc]">📥</span>
+            <div>
+              <h2 class="text-lg font-bold text-white">Caixa de Entrada Rápida</h2>
+              <p class="text-xs text-slate-400">Anote orçamentos ou pedidos recebidos no WhatsApp/Direct e envie para o quadro com 1 clique.</p>
+            </div>
+          </div>
+
+          <form onsubmit="addInboxItem(event)" class="mt-4 space-y-3">
+            <textarea
+              id="inboxTextInput"
+              rows="2"
+              required
+              placeholder="Ex: Cliente Pedro pediu 2 suportes de fone em PETG Preto via WhatsApp - R$ 95,00 (entrega sexta)..."
+              class="w-full bg-[#22272b] text-sm text-white placeholder-slate-400 p-3 rounded-xl border border-white/10 focus:border-[#bf74fc] focus:outline-none resize-none"
+            ></textarea>
+            <div class="flex flex-wrap items-center justify-between gap-2">
+              <div class="flex flex-wrap items-center gap-2">
+                <select id="inboxChannelSelect" class="bg-[#22272b] text-xs text-slate-200 px-2.5 py-2 rounded-lg border border-white/10 focus:border-[#bf74fc] focus:outline-none">
+                  <option value="Site">Canal: Site</option>
+                  <option value="Retirada">Canal: Retirada</option>
+                  <option value="Shopee">Canal: Shopee</option>
+                  <option value="Correios">Canal: Correios</option>
+                  <option value="Marketplace">Canal: Marketplace</option>
+                  <option value="Urgente">Tag: Urgente</option>
+                </select>
+                <input
+                  id="inboxValueInput"
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  placeholder="Valor R$ (opcional)"
+                  class="w-36 bg-[#22272b] text-xs text-white placeholder-slate-400 px-2.5 py-2 rounded-lg border border-white/10 focus:border-[#bf74fc] focus:outline-none"
+                />
+              </div>
+              <button
+                type="submit"
+                class="bg-[#9619c7] hover:bg-[#ab24e0] text-white text-xs sm:text-sm font-semibold px-4 py-2 rounded-lg shadow transition-colors cursor-pointer"
+              >
+                + Salvar na Caixa de Entrada
+              </button>
+            </div>
+          </form>
+        </div>
+
+        <div class="flex items-center justify-between mb-3">
+          <h3 class="text-sm font-semibold text-slate-300 uppercase tracking-wider">Anotações Pendentes (<span id="inboxCount">0</span>)</h3>
+        </div>
+
+        <div id="inboxList" class="space-y-2.5">
+          <!-- Itens da caixa de entrada -->
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- ==================== BARRA FLUTUANTE INFERIOR (DOCK TRELLO) ==================== -->
+  <nav aria-label="Alternar visualização" class="fixed bottom-4 left-1/2 -translate-x-1/2 z-40">
+    <div class="flex items-center gap-1 bg-[#16181d]/95 backdrop-blur-xl border border-white/15 p-1.5 rounded-2xl shadow-2xl shadow-black/70">
+      <button
+        onclick="switchTab('inbox')"
+        data-tab-btn="inbox"
+        class="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all cursor-pointer text-slate-300 hover:text-white hover:bg-white/10"
+      >
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
+        </svg>
+        <span>Caixa de entrada</span>
+        <span id="dockInboxBadge" class="hidden bg-[#9619c7] text-white text-[10px] font-bold px-1.5 py-0.2 rounded-full">0</span>
+      </button>
+
+      <button
+        onclick="switchTab('planner')"
+        data-tab-btn="planner"
+        class="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all cursor-pointer text-slate-300 hover:text-white hover:bg-white/10"
+      >
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+          <line x1="16" y1="2" x2="16" y2="6" />
+          <line x1="8" y1="2" x2="8" y2="6" />
+          <line x1="3" y1="10" x2="21" y2="10" />
+        </svg>
+        <span>Planejador</span>
+      </button>
+
+      <button
+        onclick="switchTab('board')"
+        data-tab-btn="board"
+        class="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all cursor-pointer bg-[#9619c7] text-white shadow-md shadow-[#9619c7]/40"
+      >
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <rect x="3" y="3" width="7" height="18" rx="1" />
+          <rect x="14" y="3" width="7" height="12" rx="1" />
+        </svg>
+        <span>Quadro</span>
+      </button>
+    </div>
+  </nav>
+
+  <!-- ==================== MODAL COMPLETO DO CARTÃO (ESTILO TRELLO) ==================== -->
+  <div id="cardModalBackdrop" class="hidden fixed inset-0 z-50 bg-black/75 backdrop-blur-sm overflow-y-auto p-3 sm:p-6 flex items-start justify-center" onclick="if(event.target===this) closeCardModal()">
+    <div id="cardModalContent" class="animate-modal bg-[#22272b] border border-white/15 w-full max-w-3xl rounded-2xl shadow-2xl overflow-hidden my-4 sm:my-8">
+      <!-- Faixa de Capa Opcional -->
+      <div id="modalCoverBar" class="hidden h-10 w-full transition-colors"></div>
+
+      <div class="p-4 sm:p-6">
+        <!-- Cabeçalho do Modal -->
+        <div class="flex items-start justify-between gap-3 mb-4">
+          <div class="flex-1">
+            <div class="flex items-center gap-2 text-xs text-slate-400 mb-1.5">
+              <span>Na lista:</span>
+              <select
+                id="modalColumnSelect"
+                onchange="moveCardFromModal(this.value)"
+                class="bg-[#16181d] text-slate-200 font-semibold px-2.5 py-1 rounded-md border border-white/10 focus:border-[#bf74fc] focus:outline-none cursor-pointer"
+              ></select>
+              <span class="text-slate-600">•</span>
+              <div class="flex items-center gap-1">
+                <span>Capa:</span>
+                <button onclick="setCardCover('')" class="w-4 h-4 rounded-full bg-slate-700 border border-white/20 hover:scale-110 transition-transform" title="Sem capa"></button>
+                <button onclick="setCardCover('#216e4e')" class="w-4 h-4 rounded-full bg-[#216e4e] border border-white/20 hover:scale-110 transition-transform" title="Capa Verde"></button>
+                <button onclick="setCardCover('#9619c7')" class="w-4 h-4 rounded-full bg-[#9619c7] border border-white/20 hover:scale-110 transition-transform" title="Capa Roxa CamadaZer0"></button>
+                <button onclick="setCardCover('#1d4ed8')" class="w-4 h-4 rounded-full bg-[#1d4ed8] border border-white/20 hover:scale-110 transition-transform" title="Capa Azul"></button>
+                <button onclick="setCardCover('#c2410c')" class="w-4 h-4 rounded-full bg-[#c2410c] border border-white/20 hover:scale-110 transition-transform" title="Capa Laranja"></button>
+              </div>
+            </div>
+            <input
+              id="modalTitleInput"
+              type="text"
+              onchange="updateCardField('title', this.value)"
+              class="w-full bg-transparent hover:bg-white/5 focus:bg-[#16181d] text-lg sm:text-xl font-bold text-white px-2 py-1 -ml-2 rounded-lg border border-transparent focus:border-[#bf74fc] focus:outline-none transition-colors"
+            />
+          </div>
+          <button
+            onclick="closeCardModal()"
+            class="w-8 h-8 rounded-lg bg-white/5 hover:bg-white/15 text-slate-300 hover:text-white flex items-center justify-center transition-colors shrink-0 cursor-pointer"
+            title="Fechar (Esc)"
+          >✕</button>
+        </div>
+
+        <!-- Corpo em 2 Colunas (Esquerda: Detalhes / Direita: Etiquetas, Prazo e Ações) -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          
+          <!-- COLUNA PRINCIPAL (ESQUERDA - 2/3) -->
+          <div class="lg:col-span-2 space-y-5">
+            
+            <!-- Etiquetas Ativas no Cartão -->
+            <div>
+              <h4 class="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2">Etiquetas Selecionadas</h4>
+              <div id="modalActiveLabels" class="flex flex-wrap items-center gap-1.5"></div>
+            </div>
+
+            <!-- Bloco Dados da Venda / Pedido 3D -->
+            <div class="bg-[#16181d] border border-white/10 rounded-xl p-3.5 sm:p-4">
+              <div class="flex items-center justify-between mb-3">
+                <h4 class="text-xs font-bold uppercase tracking-wider text-[#bf74fc] flex items-center gap-1.5">
+                  <span>🧾</span> Dados da Venda & Impressão 3D
+                </h4>
+              </div>
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
+                <div>
+                  <label class="block text-[11px] text-slate-400 mb-1">Nome do Cliente</label>
+                  <input
+                    id="modalClientInput"
+                    type="text"
+                    placeholder="Ex: João da Silva"
+                    onchange="updateOrderField('client', this.value)"
+                    class="w-full bg-[#22272b] text-white px-2.5 py-1.5 rounded-lg border border-white/10 focus:border-[#bf74fc] focus:outline-none text-xs sm:text-sm"
+                  />
+                </div>
+                <div>
+                  <label class="block text-[11px] text-slate-400 mb-1">Canal de Venda</label>
+                  <select
+                    id="modalChannelInput"
+                    onchange="updateOrderField('channel', this.value)"
+                    class="w-full bg-[#22272b] text-white px-2.5 py-1.5 rounded-lg border border-white/10 focus:border-[#bf74fc] focus:outline-none text-xs sm:text-sm"
+                  >
+                    <option value="">Selecionar canal...</option>
+                    <option value="Site">Site CamadaZer0</option>
+                    <option value="Shopee">Shopee</option>
+                    <option value="Marketplace">Marketplace</option>
+                    <option value="WhatsApp">WhatsApp / Direct</option>
+                    <option value="Retirada">Retirada Local</option>
+                  </select>
+                </div>
+                <div>
+                  <label class="block text-[11px] text-slate-400 mb-1">Valor do Pedido (R$)</label>
+                  <input
+                    id="modalPriceInput"
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    placeholder="0,00"
+                    onchange="updateOrderField('price', parseFloat(this.value) || 0)"
+                    class="w-full bg-[#22272b] text-emerald-300 font-semibold px-2.5 py-1.5 rounded-lg border border-white/10 focus:border-[#bf74fc] focus:outline-none text-xs sm:text-sm"
+                  />
+                </div>
+                <div>
+                  <label class="block text-[11px] text-slate-400 mb-1">Filamento / Cor</label>
+                  <input
+                    id="modalFilamentInput"
+                    type="text"
+                    list="filamentSuggestions"
+                    placeholder="Ex: PETG Preto"
+                    onchange="updateOrderField('filament', this.value)"
+                    class="w-full bg-[#22272b] text-white px-2.5 py-1.5 rounded-lg border border-white/10 focus:border-[#bf74fc] focus:outline-none text-xs sm:text-sm"
+                  />
+                  <datalist id="filamentSuggestions">
+                    <option value="PETG Preto"></option>
+                    <option value="PETG Branco"></option>
+                    <option value="PETG Prata Cromado"></option>
+                    <option value="PLA Preto Fosco"></option>
+                    <option value="PLA Roxo CamadaZer0"></option>
+                    <option value="ABS Cinza"></option>
+                  </datalist>
+                </div>
+                <div class="sm:col-span-2">
+                  <label class="block text-[11px] text-slate-400 mb-1">Código de Rastreio / Observação de Entrega</label>
+                  <div class="flex items-center gap-1.5">
+                    <input
+                      id="modalTrackingInput"
+                      type="text"
+                      placeholder="Ex: BR948271645BR ou Retirada às 18h"
+                      onchange="updateOrderField('tracking', this.value)"
+                      class="flex-1 bg-[#22272b] text-white px-2.5 py-1.5 rounded-lg border border-white/10 focus:border-[#bf74fc] focus:outline-none text-xs sm:text-sm"
+                    />
+                    <button
+                      type="button"
+                      onclick="copyTrackingCode()"
+                      class="bg-[#22272b] hover:bg-[#2c333a] text-slate-300 text-xs px-2.5 py-1.5 rounded-lg border border-white/10 transition-colors cursor-pointer"
+                      title="Copiar rastreio"
+                    >Copiar</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Descrição Editável -->
+            <div>
+              <h4 class="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2 flex items-center gap-1.5">
+                <span>📝</span> Descrição & Observações Técnicas
+              </h4>
+              <textarea
+                id="modalDescriptionInput"
+                rows="3"
+                placeholder="Adicione detalhes do arquivo STL/3MF, parâmetros de fatiamento, acabamentos..."
+                onchange="updateCardField('description', this.value)"
+                class="w-full bg-[#16181d] hover:bg-[#1b1e24] focus:bg-[#16181d] text-sm text-slate-200 placeholder-slate-500 p-3 rounded-xl border border-white/10 focus:border-[#bf74fc] focus:outline-none transition-colors"
+              ></textarea>
+            </div>
+
+            <!-- Checklist Completa -->
+            <div class="bg-[#16181d] border border-white/10 rounded-xl p-3.5 sm:p-4">
+              <div class="flex items-center justify-between mb-2">
+                <h4 class="text-xs font-semibold uppercase tracking-wider text-slate-300 flex items-center gap-1.5">
+                  <span>☑️</span> Checklist de Produção / Entrega
+                </h4>
+                <span id="modalChecklistPercent" class="text-xs font-bold text-[#bf74fc]">0%</span>
+              </div>
+
+              <!-- Barra de Progresso -->
+              <div class="w-full h-2 bg-white/10 rounded-full overflow-hidden mb-3">
+                <div id="modalChecklistBar" class="h-full bg-[#9619c7] transition-all duration-300" style="width: 0%"></div>
+              </div>
+
+              <!-- Lista de Itens -->
+              <div id="modalChecklistItems" class="space-y-1.5 mb-3"></div>
+
+              <!-- Adicionar Item na Checklist -->
+              <form onsubmit="addChecklistItem(event)" class="flex items-center gap-2">
+                <input
+                  id="newChecklistItemInput"
+                  type="text"
+                  placeholder="Adicionar etapa (ex: Remover suportes)..."
+                  class="flex-1 bg-[#22272b] text-xs sm:text-sm text-white placeholder-slate-400 px-3 py-1.5 rounded-lg border border-white/10 focus:border-[#bf74fc] focus:outline-none"
+                />
+                <button
+                  type="submit"
+                  class="bg-[#9619c7] hover:bg-[#ab24e0] text-white text-xs font-semibold px-3 py-1.5 rounded-lg transition-colors cursor-pointer"
+                >Adicionar</button>
+              </form>
+            </div>
+
+            <!-- Comentários / Histórico -->
+            <div>
+              <h4 class="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2.5 flex items-center gap-1.5">
+                <span>💬</span> Comentários & Atualizações
+              </h4>
+              <form onsubmit="addComment(event)" class="flex items-start gap-2 mb-3">
+                <div class="w-7 h-7 rounded-full bg-[#9619c7] text-white text-[11px] font-bold flex items-center justify-center shrink-0 mt-0.5">NM</div>
+                <div class="flex-1">
+                  <textarea
+                    id="newCommentInput"
+                    rows="2"
+                    placeholder="Escreva uma atualização sobre o pedido..."
+                    class="w-full bg-[#16181d] text-xs sm:text-sm text-white placeholder-slate-400 p-2.5 rounded-xl border border-white/10 focus:border-[#bf74fc] focus:outline-none resize-none"
+                  ></textarea>
+                  <button
+                    type="submit"
+                    class="mt-1.5 bg-[#2c333a] hover:bg-[#9619c7] text-white text-xs font-semibold px-3 py-1.5 rounded-lg transition-colors cursor-pointer"
+                  >Salvar comentário</button>
+                </div>
+              </form>
+              <div id="modalCommentsList" class="space-y-2"></div>
+            </div>
+          </div>
+
+          <!-- COLUNA LATERAL (DIREITA - 1/3) -->
+          <div class="space-y-4">
+            
+            <!-- Data de Entrega -->
+            <div class="bg-[#16181d] border border-white/10 rounded-xl p-3">
+              <h4 class="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2">Data de Entrega</h4>
+              <input
+                id="modalDueDateInput"
+                type="date"
+                onchange="updateCardField('dueDate', this.value)"
+                class="w-full bg-[#22272b] text-xs sm:text-sm text-white px-2.5 py-1.5 rounded-lg border border-white/10 focus:border-[#bf74fc] focus:outline-none mb-2"
+              />
+              <label class="flex items-center gap-2 text-xs text-slate-200 cursor-pointer select-none">
+                <input
+                  id="modalCompletedCheckbox"
+                  type="checkbox"
+                  onchange="updateCardField('completed', this.checked)"
+                  class="w-4 h-4 rounded accent-emerald-500 cursor-pointer"
+                />
+                <span>Marcar entrega como concluída</span>
+              </label>
+            </div>
+
+            <!-- Gerenciar Etiquetas -->
+            <div class="bg-[#16181d] border border-white/10 rounded-xl p-3">
+              <h4 class="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2">Etiquetas</h4>
+              <div id="modalLabelsPicker" class="space-y-1 max-h-56 overflow-y-auto pr-1 mb-2.5"></div>
+
+              <!-- Criar Nova Etiqueta -->
+              <div class="pt-2 border-t border-white/10">
+                <p class="text-[11px] text-slate-400 mb-1.5">Nova etiqueta personalizada:</p>
+                <div class="flex items-center gap-1.5">
+                  <input
+                    id="customLabelNameInput"
+                    type="text"
+                    placeholder="Nome..."
+                    class="flex-1 min-w-0 bg-[#22272b] text-xs text-white px-2 py-1 rounded-md border border-white/10 focus:border-[#bf74fc] focus:outline-none"
+                  />
+                  <input
+                    id="customLabelColorInput"
+                    type="color"
+                    value="#9619c7"
+                    class="w-7 h-7 rounded bg-transparent border-0 cursor-pointer"
+                    title="Cor da etiqueta"
+                  />
+                  <button
+                    type="button"
+                    onclick="createCustomLabel()"
+                    class="bg-[#9619c7] hover:bg-[#ab24e0] text-white text-xs font-bold px-2 py-1 rounded-md cursor-pointer"
+                  >+</button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Ações do Cartão -->
+            <div class="bg-[#16181d] border border-white/10 rounded-xl p-3 space-y-2">
+              <h4 class="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1">Ações</h4>
+              <button
+                type="button"
+                onclick="duplicateCurrentCard()"
+                class="w-full text-left bg-[#22272b] hover:bg-[#2c333a] text-slate-200 text-xs font-medium px-3 py-2 rounded-lg border border-white/10 flex items-center gap-2 transition-colors cursor-pointer"
+              >
+                <span>📋</span> Duplicar cartão
+              </button>
+
+              <button
+                id="deleteCardBtn"
+                type="button"
+                onclick="handleDeleteCardClick()"
+                class="w-full text-left bg-rose-500/10 hover:bg-rose-500/20 text-rose-300 text-xs font-medium px-3 py-2 rounded-lg border border-rose-500/25 flex items-center gap-2 transition-colors cursor-pointer"
+              >
+                <span>🗑️</span> <span id="deleteCardBtnText">Excluir cartão</span>
+              </button>
+            </div>
+
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== MODAL RÁPIDO "+ CRIAR PEDIDO" ==================== -->
+  <div id="quickCreateBackdrop" class="hidden fixed inset-0 z-50 bg-black/75 backdrop-blur-sm overflow-y-auto p-3 sm:p-6 flex items-center justify-center" onclick="if(event.target===this) closeQuickCreateModal()">
+    <div class="animate-modal bg-[#22272b] border border-white/15 w-full max-w-lg rounded-2xl shadow-2xl p-5 sm:p-6">
+      <div class="flex items-center justify-between mb-4">
+        <h3 class="text-lg font-bold text-white flex items-center gap-2">
+          <span class="w-7 h-7 rounded-lg bg-[#9619c7] text-white flex items-center justify-center text-sm">+</span>
+          Novo Pedido / Tarefa 3D
+        </h3>
+        <button onclick="closeQuickCreateModal()" class="text-slate-400 hover:text-white px-2 py-1 rounded-lg hover:bg-white/10 cursor-pointer">✕</button>
+      </div>
+
+      <form onsubmit="submitQuickCreate(event)" class="space-y-3.5 text-sm">
+        <div>
+          <label class="block text-xs text-slate-400 mb-1">Título do Pedido / Peça *</label>
+          <input
+            id="qcTitle"
+            type="text"
+            required
+            placeholder="Ex: Suporte Headphone Customizado - Pedro"
+            class="w-full bg-[#16181d] text-white px-3 py-2 rounded-lg border border-white/10 focus:border-[#bf74fc] focus:outline-none"
+          />
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs text-slate-400 mb-1">Coluna Inicial</label>
+            <select id="qcColumn" class="w-full bg-[#16181d] text-white px-3 py-2 rounded-lg border border-white/10 focus:border-[#bf74fc] focus:outline-none"></select>
+          </div>
+          <div>
+            <label class="block text-xs text-slate-400 mb-1">Etiqueta / Canal</label>
+            <select id="qcLabel" class="w-full bg-[#16181d] text-white px-3 py-2 rounded-lg border border-white/10 focus:border-[#bf74fc] focus:outline-none"></select>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs text-slate-400 mb-1">Cliente</label>
+            <input id="qcClient" type="text" placeholder="Nome do cliente" class="w-full bg-[#16181d] text-white px-3 py-2 rounded-lg border border-white/10 focus:border-[#bf74fc] focus:outline-none" />
+          </div>
+          <div>
+            <label class="block text-xs text-slate-400 mb-1">Valor (R$)</label>
+            <input id="qcPrice" type="number" step="0.01" min="0" placeholder="0,00" class="w-full bg-[#16181d] text-emerald-300 px-3 py-2 rounded-lg border border-white/10 focus:border-[#bf74fc] focus:outline-none" />
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs text-slate-400 mb-1">Filamento / Cor</label>
+            <input id="qcFilament" type="text" list="filamentSuggestions" placeholder="Ex: PETG Preto" class="w-full bg-[#16181d] text-white px-3 py-2 rounded-lg border border-white/10 focus:border-[#bf74fc] focus:outline-none" />
+          </div>
+          <div>
+            <label class="block text-xs text-slate-400 mb-1">Data de Entrega</label>
+            <input id="qcDueDate" type="date" class="w-full bg-[#16181d] text-white px-3 py-2 rounded-lg border border-white/10 focus:border-[#bf74fc] focus:outline-none" />
+          </div>
+        </div>
+
+        <div class="flex items-center justify-end gap-2 pt-2">
+          <button type="button" onclick="closeQuickCreateModal()" class="px-4 py-2 rounded-lg text-slate-300 hover:bg-white/10 text-xs sm:text-sm cursor-pointer">Cancelar</button>
+          <button type="submit" class="bg-[#9619c7] hover:bg-[#ab24e0] text-white font-semibold px-4 py-2 rounded-lg shadow-md text-xs sm:text-sm cursor-pointer">Criar Pedido</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ==================== MODAL DE CONFIRMAÇÃO PERSONALIZADO ==================== -->
+  <div id="confirmModalBackdrop" class="hidden fixed inset-0 z-50 bg-black/75 backdrop-blur-sm p-4 flex items-center justify-center">
+    <div class="animate-modal bg-[#22272b] border border-white/15 w-full max-w-md rounded-2xl shadow-2xl p-5">
+      <h3 id="confirmModalTitle" class="text-base font-bold text-white mb-2">Confirmar ação</h3>
+      <p id="confirmModalMessage" class="text-sm text-slate-300 mb-5"></p>
+      <div class="flex justify-end gap-2">
+        <button onclick="closeConfirmModal()" class="px-3.5 py-1.5 rounded-lg bg-white/10 hover:bg-white/15 text-slate-200 text-xs sm:text-sm cursor-pointer">Cancelar</button>
+        <button id="confirmModalActionBtn" class="px-3.5 py-1.5 rounded-lg bg-rose-600 hover:bg-rose-500 text-white font-semibold text-xs sm:text-sm cursor-pointer">Confirmar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== CONTAINER DE NOTIFICAÇÕES (TOASTS) ==================== -->
+  <div id="toastContainer" class="fixed top-16 right-4 z-50 flex flex-col gap-2 pointer-events-none"></div>
+
+  <!-- ==================== LÓGICA DA APLICAÇÃO (JAVASCRIPT) ==================== -->
+  <script>
+    // Chave de armazenamento no localStorage
+    const STORAGE_KEY = 'agenda_camadazer0_state_v1';
+
+    // Utilitário de data local YYYY-MM-DD
+    function getLocalDateISO(offsetDays = 0) {
+      const date = new Date();
+      date.setDate(date.getDate() + offsetDays);
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const day = String(date.getDate()).padStart(2, '0');
+      return `${year}-${month}-${day}`;
+    }
+
+    // Formata YYYY-MM-DD para "26 de nov." em Português do Brasil
+    function formatShortDateBR(isoDate) {
+      if (!isoDate) return '';
+      const [y, m, d] = isoDate.split('-').map(Number);
+      const months = ['jan.', 'fev.', 'mar.', 'abr.', 'mai.', 'jun.', 'jul.', 'ago.', 'set.', 'out.', 'nov.', 'dez.'];
+      return `${d} de ${months[m - 1]}`;
+    }
+
+    // Formata moeda BRL
+    function formatCurrencyBRL(val) {
+      const num = Number(val) || 0;
+      return num.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+    }
+
+    // Etiquetas padrão do ecossistema CamadaZer0
+    const DEFAULT_LABELS = [
+      { id: 'lbl-retirada', name: 'Retirada', color: '#9619c7', textColor: '#ffffff' },
+      { id: 'lbl-correios', name: 'Correios', color: '#2563eb', textColor: '#ffffff' },
+      { id: 'lbl-shopee', name: 'Shopee', color: '#ea580c', textColor: '#ffffff' },
+      { id: 'lbl-marketplace', name: 'Marketplace', color: '#0891b2', textColor: '#ffffff' },
+      { id: 'lbl-site', name: 'Site', color: '#4f46e5', textColor: '#ffffff' },
+      { id: 'lbl-urgente', name: 'Urgente', color: '#dc2626', textColor: '#ffffff' },
+      { id: 'lbl-petg-preto', name: 'PETG Preto', color: '#334155', textColor: '#f8fafc' },
+      { id: 'lbl-petg-branco', name: 'PETG Branco', color: '#e2e8f0', textColor: '#0f172a' },
+      { id: 'lbl-petg-prata', name: 'PETG Prata Cromado', color: '#64748b', textColor: '#ffffff' },
+      { id: 'lbl-concluido', name: 'Concluído', color: '#16a34a', textColor: '#ffffff' }
+    ];
+
+    // Estado inicial padrão baseado no fluxo de impressão 3D e no print de referência
+    function createInitialState() {
+      const todayISO = getLocalDateISO(0);
+      const tomorrowISO = getLocalDateISO(1);
+      const plus2ISO = getLocalDateISO(2);
+
+      return {
+        boardTitle: 'Pedidos e entregas da impressão 3D',
+        theme: 'default',
+        labels: JSON.parse(JSON.stringify(DEFAULT_LABELS)),
+        columns: [
+          {
+            id: 'col-novos',
+            title: 'Novos pedidos',
+            cards: [
+              {
+                id: 'card-como-usar',
+                title: 'Como usar este quadro (abra este cartão)',
+                coverColor: '#216e4e',
+                labels: [],
+                dueDate: todayISO,
+                completed: false,
+                description:
+                  'Bem-vindo à Agenda CamadaZer0! Este quadro foi configurado para organizar vendas, produção de impressão 3D e entregas.\n\n• Arraste e solte os cartões entre as colunas conforme o pedido avança.\n• Clique em qualquer cartão para editar dados do cliente, valor (R$), filamento e rastreio.\n• Use a barra inferior para alternar entre Quadro, Planejador por datas e Caixa de entrada.',
+                order: {
+                  client: '',
+                  channel: 'Site',
+                  price: 0,
+                  filament: 'PETG Preto',
+                  tracking: ''
+                },
+                checklist: [
+                  { id: 'chk-1', text: 'Arrastar um cartão entre colunas', done: false },
+                  { id: 'chk-2', text: 'Preencher cliente, valor R$ e filamento', done: false },
+                  { id: 'chk-3', text: 'Conferir prazos na aba Planejador', done: false },
+                  { id: 'chk-4', text: 'Testar anotação rápida na Caixa de entrada', done: false }
+                ],
+                comments: [
+                  {
+                    id: 'com-1',
+                    author: 'NM',
+                    text: 'Dica: Exporte um backup em JSON na barra superior sempre que desejar salvar uma cópia de segurança.',
+                    createdAt: 'Hoje'
+                  }
+                ]
+              },
+              {
+                id: 'card-registrar',
+                title: 'Registrar cada pedido recebido',
+                coverColor: '',
+                labels: ['lbl-site'],
+                dueDate: tomorrowISO,
+                completed: false,
+                description:
+                  'Ao receber uma venda no site, registre o cliente, o arquivo 3D escolhido, cor do filamento e o prazo combinado de envio.',
+                order: {
+                  client: 'Lucas Almeida',
+                  channel: 'Site',
+                  price: 149.90,
+                  filament: 'PETG Preto',
+                  tracking: 'Aguardando fatiamento'
+                },
+                checklist: [],
+                comments: []
+              }
+            ]
+          },
+          {
+            id: 'col-producao',
+            title: 'Análise e produção',
+            cards: [
+              {
+                id: 'card-conferir',
+                title: 'Conferir arquivo, material e viabilidade',
+                coverColor: '',
+                labels: ['lbl-petg-preto'],
+                dueDate: plus2ISO,
+                completed: false,
+                description:
+                  'Revisar malha STL/3MF, orientação ideal na mesa para resistência mecânica e disponibilidade de filamento PETG.',
+                order: {
+                  client: 'Mariana Costa',
+                  channel: 'Site',
+                  price: 220.00,
+                  filament: 'PETG Preto',
+                  tracking: 'Kit 3 suportes técnicos'
+                },
+                checklist: [
+                  { id: 'chk-p1', text: 'Verificar malha STL/3MF', done: false },
+                  { id: 'chk-p2', text: 'Confirmar cor do filamento PETG', done: false },
+                  { id: 'chk-p3', text: 'Fatiar para bico 0.4mm (Creality Hi)', done: false },
+                  { id: 'chk-p4', text: 'Calcular tempo e gramas', done: false },
+                  { id: 'chk-p5', text: 'Iniciar impressão', done: false }
+                ],
+                comments: []
+              },
+              {
+                id: 'card-acompanhar',
+                title: 'Acompanhar impressão em andamento',
+                coverColor: '',
+                labels: ['lbl-shopee'],
+                dueDate: todayISO,
+                completed: false,
+                description:
+                  'Monitorar adesão das primeiras camadas, temperatura da mesa e estabilidade da extrusão.',
+                order: {
+                  client: 'Rafael Mendes',
+                  channel: 'Shopee',
+                  price: 89.90,
+                  filament: 'PETG Branco',
+                  tracking: 'Postagem Shopee Xpress'
+                },
+                checklist: [],
+                comments: []
+              }
+            ]
+          },
+          {
+            id: 'col-acabamento',
+            title: 'Acabamento e entrega',
+            cards: [
+              {
+                id: 'card-finalizar',
+                title: 'Finalizar, embalar e entregar',
+                coverColor: '',
+                labels: ['lbl-correios'],
+                dueDate: '',
+                completed: false,
+                description:
+                  'Remover suportes com cuidado, realizar inspeção visual, embalar com proteção e enviar código de rastreio.',
+                order: {
+                  client: 'Fernanda Oliveira',
+                  channel: 'Marketplace',
+                  price: 185.00,
+                  filament: 'PETG Prata Cromado',
+                  tracking: 'BR948271645BR'
+                },
+                checklist: [
+                  { id: 'chk-a1', text: 'Remover suportes e brim', done: false },
+                  { id: 'chk-a2', text: 'Inspeção visual de acabamento', done: false },
+                  { id: 'chk-a3', text: 'Embalar com proteção', done: false },
+                  { id: 'chk-a4', text: 'Gerar etiqueta de envio', done: false },
+                  { id: 'chk-a5', text: 'Enviar rastreio ao cliente', done: false }
+                ],
+                comments: []
+              },
+              {
+                id: 'card-retirada',
+                title: 'Separar pedidos prontos para retirada',
+                coverColor: '',
+                labels: ['lbl-retirada'],
+                dueDate: '',
+                completed: false,
+                description:
+                  'Deixar pedido identificado na bancada de expedição e enviar mensagem confirmando horário de retirada.',
+                order: {
+                  client: 'Carlos Eduardo',
+                  channel: 'Retirada',
+                  price: 110.00,
+                  filament: 'PETG Preto',
+                  tracking: 'Retirada presencial no estúdio'
+                },
+                checklist: [],
+                comments: []
+              }
+            ]
+          },
+          {
+            id: 'col-concluidos',
+            title: 'Concluídos',
+            cards: [
+              {
+                id: 'card-revisar',
+                title: 'Revisar pedidos entregues',
+                coverColor: '',
+                labels: ['lbl-concluido'],
+                dueDate: '',
+                completed: true,
+                description:
+                  'Confirmar recebimento com o cliente, solicitar feedback da impressão 3D e arquivar o projeto.',
+                order: {
+                  client: 'Juliana Santos',
+                  channel: 'Site',
+                  price: 310.00,
+                  filament: 'PETG Prata Cromado',
+                  tracking: 'Entregue com sucesso'
+                },
+                checklist: [],
+                comments: []
+              }
+            ]
+          }
+        ],
+        inbox: [
+          {
+            id: 'inb-1',
+            text: 'Orçamento WhatsApp: Suporte de controle PS5 em PETG Prata Cromado - Cliente Bruno',
+            channel: 'Site',
+            price: 75.00,
+            createdAt: 'Hoje'
+          }
+        ]
+      };
+    }
+
+    // Variáveis de Estado em Memória
+    let appState = loadState();
+    let currentTab = 'board';
+    let searchQuery = '';
+    let activeLabelFilter = 'ALL';
+    let activeModalCardId = null;
+    let activeModalColumnId = null;
+    let deleteConfirmArmed = false;
+
+    // Variáveis de Drag and Drop
+    let draggedCardId = null;
+    let draggedFromColId = null;
+
+    // Carregar estado do localStorage
+    function loadState() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (!raw) return createInitialState();
+        const parsed = JSON.parse(raw);
+        if (!parsed || !Array.isArray(parsed.columns)) return createInitialState();
+        if (!Array.isArray(parsed.labels)) parsed.labels = JSON.parse(JSON.stringify(DEFAULT_LABELS));
+        if (!Array.isArray(parsed.inbox)) parsed.inbox = [];
+        return parsed;
+      } catch (e) {
+        console.error('Erro ao ler localStorage:', e);
+        return createInitialState();
+      }
+    }
+
+    // Salvar estado no localStorage
+    function saveState() {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(appState));
+      } catch (e) {
+        console.error('Erro ao salvar no localStorage:', e);
+      }
+      updateKPIs();
+    }
+
+    // Gerador simples de IDs únicos
+    function uid(prefix = 'id') {
+      return `${prefix}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`;
+    }
+
+    // Exibir Toast discreto
+    function showToast(message, type = 'success') {
+      const container = document.getElementById('toastContainer');
+      const toast = document.createElement('div');
+      const accent =
+        type === 'error'
+          ? 'border-rose-500/50 bg-[#27181d] text-rose-200'
+          : type === 'info'
+          ? 'border-[#bf74fc]/50 bg-[#221a2b] text-purple-100'
+          : 'border-emerald-500/40 bg-[#182620] text-emerald-200';
+
+      toast.className = `animate-modal pointer-events-auto px-4 py-2.5 rounded-xl border shadow-xl text-xs sm:text-sm font-medium flex items-center gap-2 ${accent}`;
+      toast.innerHTML = `<span>${type === 'error' ? '⚠️' : type === 'info' ? '💜' : '✅'}</span><span>${escapeHTML(message)}</span>`;
+      container.appendChild(toast);
+
+      setTimeout(() => {
+        toast.style.opacity = '0';
+        toast.style.transition = 'opacity 0.25s ease';
+        setTimeout(() => toast.remove(), 260);
+      }, 2800);
+    }
+
+    // Escape seguro contra XSS
+    function escapeHTML(str) {
+      if (str === null || str === undefined) return '';
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+    }
+
+    // ==================== TEMA & TÍTULO DO QUADRO ====================
+    function setBackgroundTheme(themeName) {
+      appState.theme = themeName;
+      document.body.classList.remove('bg-theme-default', 'bg-theme-workbench', 'bg-theme-purple');
+      document.body.classList.add(`bg-theme-${themeName}`);
+
+      document.querySelectorAll('[data-theme-btn]').forEach((btn) => {
+        const isSelected = btn.getAttribute('data-theme-btn') === themeName;
+        btn.className = isSelected
+          ? 'px-2 py-1 rounded-md font-semibold bg-[#9619c7] text-white transition-colors cursor-pointer'
+          : 'px-2 py-1 rounded-md font-medium text-slate-400 hover:text-white transition-colors cursor-pointer';
+      });
+
+      saveState();
+    }
+
+    function saveBoardTitle(newTitle) {
+      const clean = newTitle.trim() || 'Pedidos e entregas da impressão 3D';
+      appState.boardTitle = clean;
+      document.getElementById('boardTitleDisplay').innerText = clean;
+      saveState();
+    }
+
+    // ==================== INDICADORES RÁPIDOS (KPIs) ====================
+    function updateKPIs() {
+      const todayISO = getLocalDateISO(0);
+      let activeCount = 0;
+      let todayCount = 0;
+      let totalValue = 0;
+
+      appState.columns.forEach((col, colIdx) => {
+        const isDoneCol = col.title.toLowerCase().includes('conclu');
+        col.cards.forEach((card) => {
+          const isCompleted = card.completed || isDoneCol;
+          if (!isCompleted) {
+            activeCount++;
+          }
+          if (card.dueDate === todayISO && !isCompleted) {
+            todayCount++;
+          }
+          if (card.order && Number(card.order.price) > 0) {
+            totalValue += Number(card.order.price);
+          }
+        });
+      });
+
+      document.getElementById('kpiActiveCount').textContent = activeCount;
+      document.getElementById('kpiTodayCount').textContent = todayCount;
+      document.getElementById('kpiTotalValue').textContent = formatCurrencyBRL(totalValue);
+
+      // Atualiza badge da Caixa de entrada na barra flutuante
+      const inboxBadge = document.getElementById('dockInboxBadge');
+      if (appState.inbox.length > 0) {
+        inboxBadge.textContent = appState.inbox.length;
+        inboxBadge.classList.remove('hidden');
+      } else {
+        inboxBadge.classList.add('hidden');
+      }
+    }
+
+    // ==================== FILTROS E BUSCA ====================
+    function handleSearch(val) {
+      searchQuery = val.trim().toLowerCase();
+      const clearBtn = document.getElementById('clearSearchBtn');
+      if (searchQuery) clearBtn.classList.remove('hidden');
+      else clearBtn.classList.add('hidden');
+      renderCurrentView();
+    }
+
+    function clearSearch() {
+      const input = document.getElementById('searchInput');
+      input.value = '';
+      handleSearch('');
+    }
+
+    function handleLabelFilter(val) {
+      activeLabelFilter = val;
+      renderCurrentView();
+    }
+
+    function cardMatchesFilters(card) {
+      // Filtro de etiqueta/canal
+      if (activeLabelFilter !== 'ALL') {
+        const filterLower = activeLabelFilter.toLowerCase();
+        const cardLabels = (card.labels || [])
+          .map((lid) => appState.labels.find((l) => l.id === lid))
+          .filter(Boolean)
+          .map((l) => l.name.toLowerCase());
+        const channelLower = (card.order?.channel || '').toLowerCase();
+        if (!cardLabels.includes(filterLower) && channelLower !== filterLower) {
+          return false;
+        }
+      }
+
+      // Filtro de pesquisa textual
+      if (searchQuery) {
+        const labelNames = (card.labels || [])
+          .map((lid) => appState.labels.find((l) => l.id === lid)?.name || '')
+          .join(' ');
+        const haystack = [
+          card.title,
+          card.description,
+          card.order?.client,
+          card.order?.channel,
+          card.order?.filament,
+          card.order?.tracking,
+          labelNames
+        ]
+          .filter(Boolean)
+          .join(' ')
+          .toLowerCase();
+        if (!haystack.includes(searchQuery)) {
+          return false;
+        }
+      }
+
+      return true;
+    }
+
+    // ==================== CÁLCULO DE BADGE DE DATA ====================
+    function getDueDateBadgeInfo(card, isDoneColumn = false) {
+      if (!card.dueDate) return null;
+      const todayISO = getLocalDateISO(0);
+      const plus2ISO = getLocalDateISO(2);
+      const formatted = formatShortDateBR(card.dueDate);
+
+      if (card.completed || isDoneColumn) {
+        return {
+          text: formatted,
+          classes: 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/35'
+        };
+      }
+      if (card.dueDate < todayISO) {
+        return {
+          text: `${formatted} (Atrasado)`,
+          classes: 'bg-rose-500/25 text-rose-200 border border-rose-500/40 font-semibold'
+        };
+      }
+      if (card.dueDate <= plus2ISO) {
+        // Destaque amarelo estilo Trello do print de referência ("26 de nov.")
+        return {
+          text: formatted,
+          classes: 'bg-amber-400 text-zinc-950 font-semibold shadow-sm'
+        };
+      }
+      return {
+        text: formatted,
+        classes: 'bg-white/10 text-slate-300 border border-white/10'
+      };
+    }
+
+    // ==================== RENDERIZAÇÃO DO QUADRO KANBAN ====================
+    function renderBoard() {
+      const container = document.getElementById('columnsContainer');
+      container.innerHTML = '';
+
+      appState.columns.forEach((col) => {
+        const isDoneCol = col.title.toLowerCase().includes('conclu');
+        const visibleCards = col.cards.filter(cardMatchesFilters);
+
+        const colEl = document.createElement('div');
+        colEl.className =
+          'w-[285px] sm:w-[300px] shrink-0 bg-[#101204]/95 border border-white/10 rounded-xl flex flex-col max-h-[calc(100vh-205px)] shadow-xl transition-shadow';
+        colEl.setAttribute('data-column-id', col.id);
+
+        // Eventos Drag-and-Drop na Coluna
+        colEl.addEventListener('dragover', (e) => handleColumnDragOver(e, col.id, colEl));
+        colEl.addEventListener('dragleave', (e) => handleColumnDragLeave(e, colEl));
+        colEl.addEventListener('drop', (e) => handleColumnDrop(e, col.id, colEl));
+
+        // Cabeçalho da Coluna
+        const headerHTML = `
+          <div class="px-3.5 pt-3 pb-2 flex items-center justify-between gap-2">
+            <div class="flex items-center gap-2 min-w-0 flex-1">
+              <h2
+                contenteditable="true"
+                spellcheck="false"
+                onblur="renameColumn('${col.id}', this.innerText)"
+                onkeydown="if(event.key==='Enter'){event.preventDefault(); this.blur();}"
+                class="font-bold text-sm text-slate-100 truncate px-1.5 py-0.5 -ml-1.5 rounded hover:bg-white/10 focus:bg-[#22272b] focus:outline-none focus:ring-1 focus:ring-[#bf74fc] cursor-text"
+                title="Clique para renomear a lista"
+              >${escapeHTML(col.title)}</h2>
+              <span class="text-xs font-semibold text-slate-400 bg-white/10 px-2 py-0.5 rounded-full shrink-0">${visibleCards.length}</span>
+            </div>
+
+            <div class="relative">
+              <button
+                onclick="toggleColumnMenu('${col.id}')"
+                class="w-7 h-7 rounded-lg hover:bg-white/10 text-slate-400 hover:text-white flex items-center justify-center transition-colors cursor-pointer"
+                title="Ações da lista"
+              >•••</button>
+              <div id="colMenu-${col.id}" class="hidden absolute right-0 mt-1 w-48 bg-[#22272b] border border-white/15 rounded-xl shadow-2xl py-1.5 z-30 text-xs">
+                <button onclick="openInlineAddCard('${col.id}'); toggleColumnMenu('${col.id}');" class="w-full text-left px-3 py-2 hover:bg-white/10 text-slate-200">+ Adicionar cartão</button>
+                <button onclick="sortColumnByDueDate('${col.id}'); toggleColumnMenu('${col.id}');" class="w-full text-left px-3 py-2 hover:bg-white/10 text-slate-200">📅 Ordenar por prazo</button>
+                <button onclick="clearCompletedInColumn('${col.id}'); toggleColumnMenu('${col.id}');" class="w-full text-left px-3 py-2 hover:bg-white/10 text-slate-200">🧹 Limpar concluídos</button>
+                <div class="border-t border-white/10 my-1"></div>
+                <button onclick="confirmDeleteColumn('${col.id}'); toggleColumnMenu('${col.id}');" class="w-full text-left px-3 py-2 hover:bg-rose-500/20 text-rose-300">🗑️ Excluir lista</button>
+              </div>
+            </div>
+          </div>
+        `;
+
+        // Área rolável dos cartões
+        const cardsListEl = document.createElement('div');
+        cardsListEl.className = 'cards-dropzone flex-1 overflow-y-auto px-2.5 py-1 space-y-2 min-h-[24px]';
+        cardsListEl.setAttribute('data-column-id', col.id);
+
+        visibleCards.forEach((card) => {
+          cardsListEl.appendChild(createCardElement(card, col.id, isDoneCol));
+        });
+
+        // Rodapé da Coluna: Inline Add Card
+        const footerEl = document.createElement('div');
+        footerEl.className = 'p-2.5 pt-1.5';
+        footerEl.innerHTML = `
+          <div id="inlineAddForm-${col.id}" class="hidden space-y-2">
+            <textarea
+              id="inlineAddInput-${col.id}"
+              rows="2"
+              placeholder="Insira um título para este cartão..."
+              onkeydown="handleInlineCardKeydown(event, '${col.id}')"
+              class="w-full bg-[#22272b] text-sm text-white placeholder-slate-400 p-2.5 rounded-lg border border-[#bf74fc] focus:outline-none resize-none shadow-md"
+            ></textarea>
+            <div class="flex items-center gap-1.5">
+              <button
+                onclick="submitInlineCard('${col.id}')"
+                class="bg-[#9619c7] hover:bg-[#ab24e0] text-white text-xs font-semibold px-3 py-1.5 rounded-lg transition-colors cursor-pointer"
+              >Adicionar cartão</button>
+              <button
+                onclick="closeInlineAddCard('${col.id}')"
+                class="text-slate-400 hover:text-white px-2 py-1 rounded-lg hover:bg-white/10 text-sm cursor-pointer"
+              >✕</button>
+            </div>
+          </div>
+
+          <button
+            id="inlineAddBtn-${col.id}"
+            onclick="openInlineAddCard('${col.id}')"
+            class="w-full text-left text-xs sm:text-sm font-medium text-slate-300 hover:text-white hover:bg-white/10 px-2.5 py-2 rounded-lg flex items-center gap-2 transition-colors cursor-pointer"
+          >
+            <span class="text-base leading-none">+</span>
+            <span>Adicionar um cartão</span>
+          </button>
+        `;
+
+        colEl.innerHTML = headerHTML;
+        colEl.appendChild(cardsListEl);
+        colEl.appendChild(footerEl);
+        container.appendChild(colEl);
+      });
+
+      // Botão "+ Adicionar outra lista" ao final das colunas
+      const addListWrapper = document.createElement('div');
+      addListWrapper.className = 'w-[280px] shrink-0';
+      addListWrapper.innerHTML = `
+        <button
+          id="showAddColBtn"
+          onclick="toggleNewColumnForm(true)"
+          class="w-full bg-white/10 hover:bg-white/15 backdrop-blur-sm border border-white/10 text-white font-semibold text-sm px-4 py-3 rounded-xl flex items-center gap-2 transition-all cursor-pointer shadow-lg"
+        >
+          <span class="text-lg leading-none">+</span>
+          <span>Adicionar outra lista</span>
+        </button>
+
+        <form id="newColumnForm" onsubmit="submitNewColumn(event)" class="hidden bg-[#101204] border border-white/15 p-3 rounded-xl space-y-2.5 shadow-xl">
+          <input
+            id="newColumnTitleInput"
+            type="text"
+            placeholder="Nome da nova lista (ex: Pós-processamento)..."
+            class="w-full bg-[#22272b] text-sm text-white placeholder-slate-400 px-3 py-2 rounded-lg border border-[#bf74fc] focus:outline-none"
+          />
+          <div class="flex items-center gap-2">
+            <button type="submit" class="bg-[#9619c7] hover:bg-[#ab24e0] text-white text-xs font-semibold px-3 py-1.5 rounded-lg cursor-pointer">Adicionar lista</button>
+            <button type="button" onclick="toggleNewColumnForm(false)" class="text-slate-400 hover:text-white px-2 py-1 rounded-lg hover:bg-white/10 text-sm cursor-pointer">✕</button>
+          </div>
+        </form>
+      `;
+      container.appendChild(addListWrapper);
+    }
+
+    // Cria o DOM de um Cartão individual
+    function createCardElement(card, columnId, isDoneCol) {
+      const cardEl = document.createElement('div');
+      cardEl.className =
+        'kanban-card group bg-[#22272b] hover:bg-[#2c333a] border border-white/[0.08] hover:border-[#bf74fc]/50 rounded-lg shadow-md cursor-pointer transition-all overflow-hidden';
+      cardEl.setAttribute('draggable', 'true');
+      cardEl.setAttribute('data-card-id', card.id);
+      cardEl.setAttribute('data-column-id', columnId);
+
+      // Eventos Drag-and-Drop no Cartão
+      cardEl.addEventListener('dragstart', (e) => {
+        draggedCardId = card.id;
+        draggedFromColId = columnId;
+        cardEl.classList.add('card-dragging');
+        e.dataTransfer.effectAllowed = 'move';
+        e.dataTransfer.setData('text/plain', card.id);
+      });
+
+      cardEl.addEventListener('dragend', () => {
+        cardEl.classList.remove('card-dragging');
+        draggedCardId = null;
+        draggedFromColId = null;
+        clearAllDropPlaceholders();
+      });
+
+      // Abrir modal ao clicar no cartão
+      cardEl.addEventListener('click', () => openCardModal(card.id, columnId));
+
+      // Capa colorida superior (se houver)
+      const coverHTML = card.coverColor
+        ? `<div class="h-7 w-full" style="background-color: ${card.coverColor};"></div>`
+        : '';
+
+      // Etiquetas coloridas
+      const resolvedLabels = (card.labels || [])
+        .map((lid) => appState.labels.find((l) => l.id === lid))
+        .filter(Boolean);
+
+      const labelsHTML =
+        resolvedLabels.length > 0
+          ? `<div class="flex flex-wrap gap-1 mb-1.5">
+              ${resolvedLabels
+                .map(
+                  (lbl) =>
+                    `<span class="text-[11px] font-semibold px-2 py-0.5 rounded-md leading-tight" style="background-color:${lbl.color}; color:${lbl.textColor || '#fff'}">${escapeHTML(lbl.name)}</span>`
+                )
+                .join('')}
+            </div>`
+          : '';
+
+      // Resumo comercial (Cliente + Valor R$) se preenchido
+      const hasClient = card.order && card.order.client && card.order.client.trim() !== '';
+      const hasPrice = card.order && Number(card.order.price) > 0;
+      const orderSummaryHTML =
+        hasClient || hasPrice
+          ? `<div class="flex items-center justify-between gap-2 text-[11px] text-slate-400 mt-1.5 pt-1.5 border-t border-white/[0.06]">
+              <span class="truncate">${hasClient ? `👤 ${escapeHTML(card.order.client)}` : ''}</span>
+              ${hasPrice ? `<span class="font-bold text-emerald-400 shrink-0">${formatCurrencyBRL(card.order.price)}</span>` : ''}
+            </div>`
+          : '';
+
+      // Badges inferiores (Data, Descrição, Rastreio, Comentários, Checklist)
+      const dueBadge = getDueDateBadgeInfo(card, isDoneCol);
+      const hasDesc = Boolean(card.description && card.description.trim());
+      const hasTracking = Boolean(card.order && card.order.tracking && card.order.tracking.trim());
+      const commentsCount = Array.isArray(card.comments) ? card.comments.length : 0;
+      const totalChecks = Array.isArray(card.checklist) ? card.checklist.length : 0;
+      const doneChecks = totalChecks > 0 ? card.checklist.filter((i) => i.done).length : 0;
+      const allChecksDone = totalChecks > 0 && doneChecks === totalChecks;
+
+      const hasBadges = dueBadge || hasDesc || hasTracking || commentsCount > 0 || totalChecks > 0;
+
+      const badgesHTML = hasBadges
+        ? `<div class="flex flex-wrap items-center gap-2.5 mt-2 text-[11px] text-slate-400">
+            ${
+              dueBadge
+                ? `<span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded ${dueBadge.classes}">
+                    <svg class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+                      <circle cx="12" cy="12" r="9" />
+                      <path stroke-linecap="round" d="M12 7v5l3 2" />
+                    </svg>
+                    <span>${dueBadge.text}</span>
+                  </span>`
+                : ''
+            }
+            ${
+              hasDesc
+                ? `<span title="Este cartão tem uma descrição" class="inline-flex items-center text-slate-400">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" d="M4 6h16M4 12h16M4 18h10" />
+                    </svg>
+                  </span>`
+                : ''
+            }
+            ${
+              hasTracking
+                ? `<span title="Rastreio / Entrega: ${escapeHTML(card.order.tracking)}" class="inline-flex items-center text-[#bf74fc]">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48" />
+                    </svg>
+                  </span>`
+                : ''
+            }
+            ${
+              commentsCount > 0
+                ? `<span title="${commentsCount} comentário(s)" class="inline-flex items-center gap-1 text-slate-400">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                    </svg>
+                    <span>${commentsCount}</span>
+                  </span>`
+                : ''
+            }
+            ${
+              totalChecks > 0
+                ? `<span title="Checklist: ${doneChecks} de ${totalChecks}" class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded ${
+                    allChecksDone ? 'bg-emerald-500/20 text-emerald-300 font-semibold' : 'text-slate-400'
+                  }">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                      <rect x="3" y="3" width="18" height="18" rx="3" />
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M8 12l3 3 5-6" />
+                    </svg>
+                    <span>${doneChecks}/${totalChecks}</span>
+                  </span>`
+                : ''
+            }
+          </div>`
+        : '';
+
+      cardEl.innerHTML = `
+        ${coverHTML}
+        <div class="p-3">
+          ${labelsHTML}
+          <p class="text-[13.5px] font-medium text-slate-100 leading-snug break-words">${escapeHTML(card.title)}</p>
+          ${badgesHTML}
+          ${orderSummaryHTML}
+        </div>
+      `;
+
+      return cardEl;
+    }
+
+    // ==================== MOTOR DE DRAG AND DROP ====================
+    function clearAllDropPlaceholders() {
+      document.querySelectorAll('.drop-placeholder').forEach((el) => el.remove());
+      document.querySelectorAll('.column-drag-over').forEach((el) => el.classList.remove('column-drag-over'));
+    }
+
+    function getDragAfterElement(container, y) {
+      const draggableElements = [...container.querySelectorAll('.kanban-card:not(.card-dragging)')];
+      return draggableElements.reduce(
+        (closest, child) => {
+          const box = child.getBoundingClientRect();
+          const offset = y - box.top - box.height / 2;
+          if (offset < 0 && offset > closest.offset) {
+            return { offset: offset, element: child };
+          } else {
+            return closest;
+          }
+        },
+        { offset: Number.NEGATIVE_INFINITY, element: null }
+      ).element;
+    }
+
+    function handleColumnDragOver(e, targetColId, colEl) {
+      e.preventDefault();
+      if (!draggedCardId) return;
+
+      colEl.classList.add('column-drag-over');
+      const dropzone = colEl.querySelector('.cards-dropzone');
+      if (!dropzone) return;
+
+      clearAllDropPlaceholders();
+      colEl.classList.add('column-drag-over');
+
+      const placeholder = document.createElement('div');
+      placeholder.className = 'drop-placeholder';
+
+      const afterElement = getDragAfterElement(dropzone, e.clientY);
+      if (afterElement == null) {
+        dropzone.appendChild(placeholder);
+      } else {
+        dropzone.insertBefore(placeholder, afterElement);
+      }
+    }
+
+    function handleColumnDragLeave(e, colEl) {
+      if (!colEl.contains(e.relatedTarget)) {
+        colEl.classList.remove('column-drag-over');
+      }
+    }
+
+    function handleColumnDrop(e, targetColId, colEl) {
+      e.preventDefault();
+      if (!draggedCardId || !draggedFromColId) return;
+
+      const dropzone = colEl.querySelector('.cards-dropzone');
+      const afterElement = dropzone ? getDragAfterElement(dropzone, e.clientY) : null;
+      const afterCardId = afterElement ? afterElement.getAttribute('data-card-id') : null;
+
+      clearAllDropPlaceholders();
+
+      const sourceCol = appState.columns.find((c) => c.id === draggedFromColId);
+      const targetCol = appState.columns.find((c) => c.id === targetColId);
+      if (!sourceCol || !targetCol) return;
+
+      const cardIndex = sourceCol.cards.findIndex((c) => c.id === draggedCardId);
+      if (cardIndex === -1) return;
+
+      const [movedCard] = sourceCol.cards.splice(cardIndex, 1);
+
+      // Se mover para a coluna "Concluídos", marca como concluído automaticamente
+      if (targetCol.title.toLowerCase().includes('conclu')) {
+        movedCard.completed = true;
+      }
+
+      if (afterCardId) {
+        const targetIndex = targetCol.cards.findIndex((c) => c.id === afterCardId);
+        if (targetIndex !== -1) {
+          targetCol.cards.splice(targetIndex, 0, movedCard);
+        } else {
+          targetCol.cards.push(movedCard);
+        }
+      } else {
+        targetCol.cards.push(movedCard);
+      }
+
+      saveState();
+      renderCurrentView();
+    }
+
+    // ==================== AÇÕES DE COLUNAS E CRIAÇÃO INLINE ====================
+    function openInlineAddCard(colId) {
+      document.getElementById(`inlineAddBtn-${colId}`).classList.add('hidden');
+      const form = document.getElementById(`inlineAddForm-${colId}`);
+      form.classList.remove('hidden');
+      const input = document.getElementById(`inlineAddInput-${colId}`);
+      input.focus();
+    }
+
+    function closeInlineAddCard(colId) {
+      document.getElementById(`inlineAddForm-${colId}`).classList.add('hidden');
+      document.getElementById(`inlineAddBtn-${colId}`).classList.remove('hidden');
+      document.getElementById(`inlineAddInput-${colId}`).value = '';
+    }
+
+    function handleInlineCardKeydown(e, colId) {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        submitInlineCard(colId, true);
+      } else if (e.key === 'Escape') {
+        closeInlineAddCard(colId);
+      }
+    }
+
+    function submitInlineCard(colId, keepOpen = false) {
+      const input = document.getElementById(`inlineAddInput-${colId}`);
+      const title = input.value.trim();
+      if (!title) return;
+
+      const col = appState.columns.find((c) => c.id === colId);
+      if (!col) return;
+
+      col.cards.push({
+        id: uid('card'),
+        title,
+        coverColor: '',
+        labels: [],
+        dueDate: '',
+        completed: col.title.toLowerCase().includes('conclu'),
+        description: '',
+        order: { client: '', channel: '', price: 0, filament: '', tracking: '' },
+        checklist: [],
+        comments: []
+      });
+
+      saveState();
+      renderBoard();
+
+      if (keepOpen) {
+        openInlineAddCard(colId);
+      }
+      showToast('Cartão adicionado!');
+    }
+
+    function toggleNewColumnForm(show) {
+      const btn = document.getElementById('showAddColBtn');
+      const form = document.getElementById('newColumnForm');
+      if (show) {
+        btn.classList.add('hidden');
+        form.classList.remove('hidden');
+        document.getElementById('newColumnTitleInput').focus();
+      } else {
+        form.classList.add('hidden');
+        btn.classList.remove('hidden');
+        document.getElementById('newColumnTitleInput').value = '';
+      }
+    }
+
+    function submitNewColumn(e) {
+      e.preventDefault();
+      const input = document.getElementById('newColumnTitleInput');
+      const title = input.value.trim();
+      if (!title) return;
+
+      appState.columns.push({
+        id: uid('col'),
+        title,
+        cards: []
+      });
+
+      saveState();
+      renderBoard();
+      showToast(`Lista "${title}" criada!`);
+    }
+
+    function renameColumn(colId, newTitle) {
+      const col = appState.columns.find((c) => c.id === colId);
+      if (!col) return;
+      const clean = newTitle.trim();
+      if (clean) {
+        col.title = clean;
+        saveState();
+      }
+      renderBoard();
+    }
+
+    function toggleColumnMenu(colId) {
+      const menu = document.getElementById(`colMenu-${colId}`);
+      const isHidden = menu.classList.contains('hidden');
+      document.querySelectorAll('[id^="colMenu-"]').forEach((m) => m.classList.add('hidden'));
+      if (isHidden) menu.classList.remove('hidden');
+    }
+
+    function sortColumnByDueDate(colId) {
+      const col = appState.columns.find((c) => c.id === colId);
+      if (!col) return;
+      col.cards.sort((a, b) => {
+        if (!a.dueDate && !b.dueDate) return 0;
+        if (!a.dueDate) return 1;
+        if (!b.dueDate) return -1;
+        return a.dueDate.localeCompare(b.dueDate);
+      });
+      saveState();
+      renderBoard();
+      showToast('Lista ordenada por data de entrega');
+    }
+
+    function clearCompletedInColumn(colId) {
+      const col = appState.columns.find((c) => c.id === colId);
+      if (!col) return;
+      const before = col.cards.length;
+      col.cards = col.cards.filter((c) => !c.completed);
+      const removed = before - col.cards.length;
+      saveState();
+      renderBoard();
+      showToast(removed > 0 ? `${removed} cartão(ões) concluído(s) removido(s)` : 'Nenhum cartão concluído nesta lista', 'info');
+    }
+
+    function confirmDeleteColumn(colId) {
+      const col = appState.columns.find((c) => c.id === colId);
+      if (!col) return;
+      openConfirmModal(
+        'Excluir lista',
+        `Deseja excluir a lista "${col.title}" e todos os ${col.cards.length} cartões dentro dela?`,
+        () => {
+          appState.columns = appState.columns.filter((c) => c.id !== colId);
+          saveState();
+          renderBoard();
+          showToast('Lista excluída', 'info');
+        }
+      );
+    }
+
+    // ==================== MODAL DE DETALHES DO CARTÃO ====================
+    function findCardAndColumn(cardId) {
+      for (const col of appState.columns) {
+        const card = col.cards.find((c) => c.id === cardId);
+        if (card) return { card, column: col };
+      }
+      return null;
+    }
+
+    function openCardModal(cardId, columnId) {
+      const found = findCardAndColumn(cardId);
+      if (!found) return;
+
+      activeModalCardId = cardId;
+      activeModalColumnId = found.column.id;
+      deleteConfirmArmed = false;
+      document.getElementById('deleteCardBtnText').textContent = 'Excluir cartão';
+
+      renderCardModalContent();
+      document.getElementById('cardModalBackdrop').classList.remove('hidden');
+    }
+
+    function closeCardModal() {
+      activeModalCardId = null;
+      activeModalColumnId = null;
+      document.getElementById('cardModalBackdrop').classList.add('hidden');
+      renderCurrentView();
+    }
+
+    function renderCardModalContent() {
+      const found = findCardAndColumn(activeModalCardId);
+      if (!found) return closeCardModal();
+      const { card, column } = found;
+
+      // Capa
+      const coverBar = document.getElementById('modalCoverBar');
+      if (card.coverColor) {
+        coverBar.style.backgroundColor = card.coverColor;
+        coverBar.classList.remove('hidden');
+      } else {
+        coverBar.classList.add('hidden');
+      }
+
+      // Seletor de coluna
+      const colSelect = document.getElementById('modalColumnSelect');
+      colSelect.innerHTML = appState.columns
+        .map((c) => `<option value="${c.id}" ${c.id === column.id ? 'selected' : ''}>${escapeHTML(c.title)}</option>`)
+        .join('');
+
+      // Campos principais
+      document.getElementById('modalTitleInput').value = card.title || '';
+      document.getElementById('modalDescriptionInput').value = card.description || '';
+      document.getElementById('modalDueDateInput').value = card.dueDate || '';
+      document.getElementById('modalCompletedCheckbox').checked = Boolean(card.completed);
+
+      // Dados do pedido 3D
+      const order = card.order || { client: '', channel: '', price: 0, filament: '', tracking: '' };
+      document.getElementById('modalClientInput').value = order.client || '';
+      document.getElementById('modalChannelInput').value = order.channel || '';
+      document.getElementById('modalPriceInput').value = order.price > 0 ? order.price : '';
+      document.getElementById('modalFilamentInput').value = order.filament || '';
+      document.getElementById('modalTrackingInput').value = order.tracking || '';
+
+      // Etiquetas ativas
+      const activeLabelsContainer = document.getElementById('modalActiveLabels');
+      const activeLabels = (card.labels || [])
+        .map((lid) => appState.labels.find((l) => l.id === lid))
+        .filter(Boolean);
+
+      activeLabelsContainer.innerHTML =
+        activeLabels.length > 0
+          ? activeLabels
+              .map(
+                (lbl) =>
+                  `<span class="inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-md shadow-sm" style="background-color:${lbl.color}; color:${lbl.textColor || '#fff'}">
+                    <span>${escapeHTML(lbl.name)}</span>
+                    <button type="button" onclick="toggleCardLabel('${lbl.id}')" class="opacity-75 hover:opacity-100 font-bold cursor-pointer">×</button>
+                  </span>`
+              )
+              .join('')
+          : `<span class="text-xs text-slate-500 italic">Nenhuma etiqueta selecionada</span>`;
+
+      // Seletor lateral de etiquetas
+      const labelsPicker = document.getElementById('modalLabelsPicker');
+      labelsPicker.innerHTML = appState.labels
+        .map((lbl) => {
+          const isChecked = (card.labels || []).includes(lbl.id);
+          return `
+            <button
+              type="button"
+              onclick="toggleCardLabel('${lbl.id}')"
+              class="w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-transform active:scale-[0.99] cursor-pointer"
+              style="background-color:${lbl.color}; color:${lbl.textColor || '#fff'}"
+            >
+              <span class="truncate">${escapeHTML(lbl.name)}</span>
+              <span>${isChecked ? '✓' : ''}</span>
+            </button>
+          `;
+        })
+        .join('');
+
+      // Checklist
+      const checklist = card.checklist || [];
+      const doneCount = checklist.filter((i) => i.done).length;
+      const percent = checklist.length > 0 ? Math.round((doneCount / checklist.length) * 100) : 0;
+
+      document.getElementById('modalChecklistPercent').textContent = `${percent}%`;
+      const bar = document.getElementById('modalChecklistBar');
+      bar.style.width = `${percent}%`;
+      bar.className = `h-full transition-all duration-300 ${percent === 100 ? 'bg-emerald-500' : 'bg-[#9619c7]'}`;
+
+      const itemsContainer = document.getElementById('modalChecklistItems');
+      itemsContainer.innerHTML = checklist
+        .map(
+          (item) => `
+          <div class="flex items-center justify-between gap-2 bg-[#22272b] hover:bg-[#282e33] px-3 py-2 rounded-lg group">
+            <label class="flex items-center gap-2.5 flex-1 cursor-pointer text-xs sm:text-sm ${
+              item.done ? 'line-through text-slate-500' : 'text-slate-200'
+            }">
+              <input
+                type="checkbox"
+                ${item.done ? 'checked' : ''}
+                onchange="toggleChecklistItem('${item.id}')"
+                class="w-4 h-4 rounded accent-[#9619c7] cursor-pointer"
+              />
+              <span>${escapeHTML(item.text)}</span>
+            </label>
+            <button
+              type="button"
+              onclick="deleteChecklistItem('${item.id}')"
+              class="text-slate-500 hover:text-rose-400 text-xs px-1.5 py-0.5 rounded opacity-70 group-hover:opacity-100 cursor-pointer"
+              title="Remover item"
+            >✕</button>
+          </div>
+        `
+        )
+        .join('');
+
+      // Comentários
+      const comments = card.comments || [];
+      const commentsContainer = document.getElementById('modalCommentsList');
+      commentsContainer.innerHTML =
+        comments.length > 0
+          ? comments
+              .map(
+                (com) => `
+                <div class="flex items-start gap-2.5 bg-[#16181d] border border-white/10 p-3 rounded-xl">
+                  <div class="w-7 h-7 rounded-full bg-[#9619c7] text-white text-[11px] font-bold flex items-center justify-center shrink-0">${escapeHTML(com.author || 'NM')}</div>
+                  <div class="flex-1 min-w-0">
+                    <div class="flex items-center justify-between gap-2 mb-1">
+                      <span class="text-xs font-semibold text-white">CamadaZer0 <span class="font-normal text-slate-400 ml-1">${escapeHTML(com.createdAt)}</span></span>
+                      <button type="button" onclick="deleteComment('${com.id}')" class="text-[11px] text-slate-500 hover:text-rose-400 cursor-pointer">Excluir</button>
+                    </div>
+                    <p class="text-xs sm:text-sm text-slate-200 whitespace-pre-line break-words">${escapeHTML(com.text)}</p>
+                  </div>
+                </div>
+              `
+              )
+              .join('')
+          : `<p class="text-xs text-slate-500 italic">Nenhum comentário registrado ainda.</p>`;
+    }
+
+    function updateCardField(field, value) {
+      const found = findCardAndColumn(activeModalCardId);
+      if (!found) return;
+      found.card[field] = value;
+      saveState();
+      renderCardModalContent();
+      renderCurrentView();
+    }
+
+    function setCardCover(color) {
+      updateCardField('coverColor', color);
+    }
+
+    function updateOrderField(field, value) {
+      const found = findCardAndColumn(activeModalCardId);
+      if (!found) return;
+      if (!found.card.order) {
+        found.card.order = { client: '', channel: '', price: 0, filament: '', tracking: '' };
+      }
+      found.card.order[field] = value;
+      saveState();
+      renderCurrentView();
+    }
+
+    function copyTrackingCode() {
+      const input = document.getElementById('modalTrackingInput');
+      if (!input.value.trim()) return showToast('Nenhum código preenchido para copiar', 'info');
+      input.select();
+      document.execCommand('copy');
+      showToast('Código/observação copiado!');
+    }
+
+    function moveCardFromModal(targetColId) {
+      const found = findCardAndColumn(activeModalCardId);
+      if (!found || found.column.id === targetColId) return;
+
+      const targetCol = appState.columns.find((c) => c.id === targetColId);
+      if (!targetCol) return;
+
+      found.column.cards = found.column.cards.filter((c) => c.id !== found.card.id);
+      if (targetCol.title.toLowerCase().includes('conclu')) {
+        found.card.completed = true;
+      }
+      targetCol.cards.push(found.card);
+      activeModalColumnId = targetColId;
+
+      saveState();
+      renderCardModalContent();
+      renderCurrentView();
+      showToast(`Movido para "${targetCol.title}"`);
+    }
+
+    function toggleCardLabel(labelId) {
+      const found = findCardAndColumn(activeModalCardId);
+      if (!found) return;
+      const labels = found.card.labels || [];
+      const idx = labels.indexOf(labelId);
+      if (idx === -1) labels.push(labelId);
+      else labels.splice(idx, 1);
+      found.card.labels = labels;
+
+      saveState();
+      renderCardModalContent();
+      renderCurrentView();
+    }
+
+    function createCustomLabel() {
+      const nameInput = document.getElementById('customLabelNameInput');
+      const colorInput = document.getElementById('customLabelColorInput');
+      const name = nameInput.value.trim();
+      if (!name) return;
+
+      const newLabel = {
+        id: uid('lbl'),
+        name,
+        color: colorInput.value || '#9619c7',
+        textColor: '#ffffff'
+      };
+      appState.labels.push(newLabel);
+      nameInput.value = '';
+
+      // Já aplica no cartão aberto
+      const found = findCardAndColumn(activeModalCardId);
+      if (found) {
+        found.card.labels = found.card.labels || [];
+        found.card.labels.push(newLabel.id);
+      }
+
+      saveState();
+      renderCardModalContent();
+      renderCurrentView();
+      showToast(`Etiqueta "${name}" criada!`);
+    }
+
+    function addChecklistItem(e) {
+      e.preventDefault();
+      const input = document.getElementById('newChecklistItemInput');
+      const text = input.value.trim();
+      if (!text) return;
+
+      const found = findCardAndColumn(activeModalCardId);
+      if (!found) return;
+
+      found.card.checklist = found.card.checklist || [];
+      found.card.checklist.push({ id: uid('chk'), text, done: false });
+      input.value = '';
+
+      saveState();
+      renderCardModalContent();
+      renderCurrentView();
+    }
+
+    function toggleChecklistItem(itemId) {
+      const found = findCardAndColumn(activeModalCardId);
+      if (!found) return;
+      const item = (found.card.checklist || []).find((i) => i.id === itemId);
+      if (item) item.done = !item.done;
+
+      saveState();
+      renderCardModalContent();
+      renderCurrentView();
+    }
+
+    function deleteChecklistItem(itemId) {
+      const found = findCardAndColumn(activeModalCardId);
+      if (!found) return;
+      found.card.checklist = (found.card.checklist || []).filter((i) => i.id !== itemId);
+
+      saveState();
+      renderCardModalContent();
+      renderCurrentView();
+    }
+
+    function addComment(e) {
+      e.preventDefault();
+      const input = document.getElementById('newCommentInput');
+      const text = input.value.trim();
+      if (!text) return;
+
+      const found = findCardAndColumn(activeModalCardId);
+      if (!found) return;
+
+      const now = new Date();
+      const timeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+
+      found.card.comments = found.card.comments || [];
+      found.card.comments.unshift({
+        id: uid('com'),
+        author: 'NM',
+        text,
+        createdAt: `Hoje às ${timeStr}`
+      });
+      input.value = '';
+
+      saveState();
+      renderCardModalContent();
+      renderCurrentView();
+    }
+
+    function deleteComment(commentId) {
+      const found = findCardAndColumn(activeModalCardId);
+      if (!found) return;
+      found.card.comments = (found.card.comments || []).filter((c) => c.id !== commentId);
+
+      saveState();
+      renderCardModalContent();
+      renderCurrentView();
+    }
+
+    function duplicateCurrentCard() {
+      const found = findCardAndColumn(activeModalCardId);
+      if (!found) return;
+
+      const copy = JSON.parse(JSON.stringify(found.card));
+      copy.id = uid('card');
+      copy.title = `${copy.title} (Cópia)`;
+      found.column.cards.push(copy);
+
+      saveState();
+      renderCurrentView();
+      showToast('Cartão duplicado!');
+    }
+
+    function handleDeleteCardClick() {
+      if (!deleteConfirmArmed) {
+        deleteConfirmArmed = true;
+        document.getElementById('deleteCardBtnText').textContent = 'Clique novamente para confirmar';
+        return;
+      }
+
+      const found = findCardAndColumn(activeModalCardId);
+      if (found) {
+        found.column.cards = found.column.cards.filter((c) => c.id !== found.card.id);
+        saveState();
+      }
+      closeCardModal();
+      showToast('Cartão excluído', 'info');
+    }
+
+    // ==================== MODAL RÁPIDO "+ CRIAR" ====================
+    function openQuickCreateModal() {
+      const colSelect = document.getElementById('qcColumn');
+      colSelect.innerHTML = appState.columns
+        .map((c) => `<option value="${c.id}">${escapeHTML(c.title)}</option>`)
+        .join('');
+
+      const lblSelect = document.getElementById('qcLabel');
+      lblSelect.innerHTML =
+        `<option value="">Sem etiqueta</option>` +
+        appState.labels.map((l) => `<option value="${l.id}">${escapeHTML(l.name)}</option>`).join('');
+
+      document.getElementById('qcTitle').value = '';
+      document.getElementById('qcClient').value = '';
+      document.getElementById('qcPrice').value = '';
+      document.getElementById('qcFilament').value = '';
+      document.getElementById('qcDueDate').value = getLocalDateISO(0);
+
+      document.getElementById('quickCreateBackdrop').classList.remove('hidden');
+      setTimeout(() => document.getElementById('qcTitle').focus(), 50);
+    }
+
+    function closeQuickCreateModal() {
+      document.getElementById('quickCreateBackdrop').classList.add('hidden');
+    }
+
+    function submitQuickCreate(e) {
+      e.preventDefault();
+      const title = document.getElementById('qcTitle').value.trim();
+      const colId = document.getElementById('qcColumn').value;
+      const labelId = document.getElementById('qcLabel').value;
+      const client = document.getElementById('qcClient').value.trim();
+      const price = parseFloat(document.getElementById('qcPrice').value) || 0;
+      const filament = document.getElementById('qcFilament').value.trim();
+      const dueDate = document.getElementById('qcDueDate').value;
+
+      if (!title) return;
+      const col = appState.columns.find((c) => c.id === colId) || appState.columns[0];
+      if (!col) return;
+
+      const labelObj = appState.labels.find((l) => l.id === labelId);
+
+      col.cards.unshift({
+        id: uid('card'),
+        title,
+        coverColor: '',
+        labels: labelId ? [labelId] : [],
+        dueDate,
+        completed: col.title.toLowerCase().includes('conclu'),
+        description: '',
+        order: {
+          client,
+          channel: labelObj ? labelObj.name : 'Site',
+          price,
+          filament,
+          tracking: ''
+        },
+        checklist: [],
+        comments: []
+      });
+
+      saveState();
+      closeQuickCreateModal();
+      renderCurrentView();
+      showToast('Pedido criado com sucesso!');
+    }
+
+    // ==================== VISÃO 2: PLANEJADOR POR DATAS ====================
+    function renderPlanner() {
+      const grid = document.getElementById('plannerGrid');
+      const todayISO = getLocalDateISO(0);
+
+      const buckets = {
+        overdue: { title: '⚠️ Atrasados', badgeColor: 'bg-rose-500/20 text-rose-300 border-rose-500/30', items: [] },
+        today: { title: '🔥 Hoje', badgeColor: 'bg-amber-400 text-zinc-950 font-bold', items: [] },
+        upcoming: { title: '📆 Próximos Dias', badgeColor: 'bg-[#9619c7]/30 text-[#bf74fc] border-[#bf74fc]/30', items: [] },
+        nodate: { title: '📌 Sem Data Definida', badgeColor: 'bg-white/10 text-slate-300', items: [] }
+      };
+
+      appState.columns.forEach((col) => {
+        const isDoneCol = col.title.toLowerCase().includes('conclu');
+        col.cards.forEach((card) => {
+          if (!cardMatchesFilters(card)) return;
+          const entry = { card, column: col, isDoneCol };
+
+          if (!card.dueDate) {
+            buckets.nodate.items.push(entry);
+          } else if (card.dueDate < todayISO && !card.completed && !isDoneCol) {
+            buckets.overdue.items.push(entry);
+          } else if (card.dueDate === todayISO) {
+            buckets.today.items.push(entry);
+          } else {
+            buckets.upcoming.items.push(entry);
+          }
+        });
+      });
+
+      // Ordenar próximos dias cronologicamente
+      buckets.upcoming.items.sort((a, b) => a.card.dueDate.localeCompare(b.card.dueDate));
+
+      grid.innerHTML = Object.values(buckets)
+        .map(
+          (bucket) => `
+          <div class="bg-[#101204]/95 border border-white/10 rounded-xl p-3.5 flex flex-col max-h-[72vh]">
+            <div class="flex items-center justify-between mb-3 pb-2 border-b border-white/10">
+              <h3 class="font-bold text-sm text-white">${bucket.title}</h3>
+              <span class="text-xs px-2 py-0.5 rounded-full border ${bucket.badgeColor}">${bucket.items.length}</span>
+            </div>
+            <div class="space-y-2.5 overflow-y-auto flex-1 pr-0.5">
+              ${
+                bucket.items.length === 0
+                  ? `<p class="text-xs text-slate-500 italic py-4 text-center">Nenhum pedido nesta faixa.</p>`
+                  : bucket.items
+                      .map(({ card, column, isDoneCol }) => {
+                        const dueBadge = getDueDateBadgeInfo(card, isDoneCol);
+                        return `
+                          <div
+                            onclick="openCardModal('${card.id}', '${column.id}')"
+                            class="bg-[#22272b] hover:bg-[#2c333a] border border-white/10 hover:border-[#bf74fc]/50 rounded-lg p-3 cursor-pointer transition-all"
+                          >
+                            <div class="flex items-center justify-between gap-2 mb-1">
+                              <span class="text-[10px] font-semibold uppercase tracking-wider text-[#bf74fc] bg-[#9619c7]/20 px-2 py-0.5 rounded">${escapeHTML(column.title)}</span>
+                              ${dueBadge ? `<span class="text-[10px] px-1.5 py-0.5 rounded ${dueBadge.classes}">${dueBadge.text}</span>` : ''}
+                            </div>
+                            <p class="text-sm font-medium text-white leading-snug mt-1">${escapeHTML(card.title)}</p>
+                            ${
+                              card.order?.client || card.order?.price > 0
+                                ? `<div class="flex items-center justify-between text-[11px] text-slate-400 mt-2 pt-1.5 border-t border-white/5">
+                                    <span>${card.order?.client ? `👤 ${escapeHTML(card.order.client)}` : ''}</span>
+                                    <span class="text-emerald-400 font-semibold">${card.order?.price > 0 ? formatCurrencyBRL(card.order.price) : ''}</span>
+                                  </div>`
+                                : ''
+                            }
+                          </div>
+                        `;
+                      })
+                      .join('')
+              }
+            </div>
+          </div>
+        `
+        )
+        .join('');
+    }
+
+    // ==================== VISÃO 3: CAIXA DE ENTRADA ====================
+    function renderInbox() {
+      const list = document.getElementById('inboxList');
+      document.getElementById('inboxCount').textContent = appState.inbox.length;
+
+      if (appState.inbox.length === 0) {
+        list.innerHTML = `
+          <div class="bg-[#16181d]/70 border border-dashed border-white/15 rounded-xl p-8 text-center">
+            <p class="text-sm text-slate-400">Sua caixa de entrada está vazia! Anote acima pedidos rápidos do WhatsApp ou Direct.</p>
+          </div>
+        `;
+        return;
+      }
+
+      list.innerHTML = appState.inbox
+        .map(
+          (item) => `
+          <div class="bg-[#22272b] border border-white/10 rounded-xl p-3.5 sm:p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div class="space-y-1">
+              <div class="flex flex-wrap items-center gap-2">
+                <span class="text-[11px] font-semibold bg-[#9619c7]/25 text-[#bf74fc] border border-[#bf74fc]/30 px-2 py-0.5 rounded">${escapeHTML(item.channel || 'Site')}</span>
+                ${item.price > 0 ? `<span class="text-xs font-bold text-emerald-400">${formatCurrencyBRL(item.price)}</span>` : ''}
+                <span class="text-[11px] text-slate-500">${escapeHTML(item.createdAt || 'Hoje')}</span>
+              </div>
+              <p class="text-sm text-slate-100 leading-snug">${escapeHTML(item.text)}</p>
+            </div>
+
+            <div class="flex items-center gap-2 shrink-0">
+              <button
+                onclick="convertInboxToCard('${item.id}')"
+                class="bg-[#9619c7] hover:bg-[#ab24e0] text-white text-xs font-semibold px-3 py-2 rounded-lg shadow transition-colors cursor-pointer"
+              >
+                Enviar para o Quadro →
+              </button>
+              <button
+                onclick="deleteInboxItem('${item.id}')"
+                class="bg-white/5 hover:bg-rose-500/20 text-slate-400 hover:text-rose-300 text-xs px-2.5 py-2 rounded-lg transition-colors cursor-pointer"
+                title="Descartar anotação"
+              >✕</button>
+            </div>
+          </div>
+        `
+        )
+        .join('');
+    }
+
+    function addInboxItem(e) {
+      e.preventDefault();
+      const textInput = document.getElementById('inboxTextInput');
+      const channelSelect = document.getElementById('inboxChannelSelect');
+      const valueInput = document.getElementById('inboxValueInput');
+
+      const text = textInput.value.trim();
+      if (!text) return;
+
+      appState.inbox.unshift({
+        id: uid('inb'),
+        text,
+        channel: channelSelect.value,
+        price: parseFloat(valueInput.value) || 0,
+        createdAt: 'Agora mesmo'
+      });
+
+      textInput.value = '';
+      valueInput.value = '';
+
+      saveState();
+      renderInbox();
+      showToast('Anotado na Caixa de Entrada!');
+    }
+
+    function deleteInboxItem(itemId) {
+      appState.inbox = appState.inbox.filter((i) => i.id !== itemId);
+      saveState();
+      renderInbox();
+    }
+
+    function convertInboxToCard(itemId) {
+      const item = appState.inbox.find((i) => i.id === itemId);
+      if (!item) return;
+
+      const targetCol = appState.columns[0];
+      if (!targetCol) return showToast('Crie uma coluna no quadro primeiro!', 'error');
+
+      const matchedLabel = appState.labels.find((l) => l.name.toLowerCase() === (item.channel || '').toLowerCase());
+
+      targetCol.cards.unshift({
+        id: uid('card'),
+        title: item.text,
+        coverColor: '',
+        labels: matchedLabel ? [matchedLabel.id] : [],
+        dueDate: getLocalDateISO(0),
+        completed: false,
+        description: `Convertido da Caixa de Entrada (${item.channel}).`,
+        order: {
+          client: '',
+          channel: item.channel || 'Site',
+          price: item.price || 0,
+          filament: '',
+          tracking: ''
+        },
+        checklist: [],
+        comments: []
+      });
+
+      appState.inbox = appState.inbox.filter((i) => i.id !== itemId);
+      saveState();
+      renderInbox();
+      switchTab('board');
+      showToast(`Pedido movido para "${targetCol.title}"!`);
+    }
+
+    // ==================== NAVEGAÇÃO ENTRE ABAS ====================
+    function switchTab(tabName) {
+      currentTab = tabName;
+
+      document.getElementById('viewBoard').classList.toggle('hidden', tabName !== 'board');
+      document.getElementById('viewPlanner').classList.toggle('hidden', tabName !== 'planner');
+      document.getElementById('viewInbox').classList.toggle('hidden', tabName !== 'inbox');
+
+      document.querySelectorAll('[data-tab-btn]').forEach((btn) => {
+        const isActive = btn.getAttribute('data-tab-btn') === tabName;
+        btn.className = isActive
+          ? 'flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all cursor-pointer bg-[#9619c7] text-white shadow-md shadow-[#9619c7]/40'
+          : 'flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all cursor-pointer text-slate-300 hover:text-white hover:bg-white/10';
+      });
+
+      renderCurrentView();
+    }
+
+    function renderCurrentView() {
+      updateKPIs();
+      if (currentTab === 'board') renderBoard();
+      else if (currentTab === 'planner') renderPlanner();
+      else if (currentTab === 'inbox') renderInbox();
+    }
+
+    // ==================== BACKUP JSON & RESTAURAÇÃO ====================
+    function exportJSON() {
+      const dataStr = JSON.stringify(appState, null, 2);
+      const blob = new Blob([dataStr], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `agenda-camadazer0-backup-${getLocalDateISO(0)}.json`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+      showToast('Backup JSON exportado!');
+    }
+
+    function importJSON(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        try {
+          const parsed = JSON.parse(e.target.result);
+          if (!parsed || !Array.isArray(parsed.columns)) {
+            throw new Error('Formato de arquivo inválido');
+          }
+          appState = parsed;
+          if (!Array.isArray(appState.labels)) appState.labels = JSON.parse(JSON.stringify(DEFAULT_LABELS));
+          if (!Array.isArray(appState.inbox)) appState.inbox = [];
+
+          saveState();
+          document.getElementById('boardTitleDisplay').innerText = appState.boardTitle || 'Pedidos e entregas da impressão 3D';
+          setBackgroundTheme(appState.theme || 'default');
+          renderCurrentView();
+          showToast('Backup restaurado com sucesso!');
+        } catch (err) {
+          showToast('Arquivo JSON inválido ou corrompido.', 'error');
+        }
+      };
+      reader.readAsText(file);
+      event.target.value = '';
+    }
+
+    function confirmResetBoard() {
+      openConfirmModal(
+        'Restaurar quadro padrão',
+        'Isso substituirá seus cartões atuais pelo modelo inicial da CamadaZer0. Recomendamos exportar um backup JSON antes. Deseja continuar?',
+        () => {
+          appState = createInitialState();
+          saveState();
+          document.getElementById('boardTitleDisplay').innerText = appState.boardTitle;
+          setBackgroundTheme(appState.theme);
+          renderCurrentView();
+          showToast('Quadro inicial restaurado!', 'info');
+        }
+      );
+    }
+
+    // ==================== MODAL DE CONFIRMAÇÃO & MENUS GLOBAIS ====================
+    function openConfirmModal(title, message, onConfirm) {
+      document.getElementById('confirmModalTitle').textContent = title;
+      document.getElementById('confirmModalMessage').textContent = message;
+      const btn = document.getElementById('confirmModalActionBtn');
+      btn.onclick = () => {
+        closeConfirmModal();
+        onConfirm();
+      };
+      document.getElementById('confirmModalBackdrop').classList.remove('hidden');
+    }
+
+    function closeConfirmModal() {
+      document.getElementById('confirmModalBackdrop').classList.add('hidden');
+    }
+
+    function toggleUserMenu() {
+      document.getElementById('userDropdown').classList.toggle('hidden');
+    }
+
+    // Fechar menus dropdown ao clicar fora e fechar modais com tecla ESC
+    document.addEventListener('click', (e) => {
+      if (!e.target.closest('#avatarBtn') && !e.target.closest('#userDropdown')) {
+        document.getElementById('userDropdown').classList.add('hidden');
+      }
+      if (!e.target.closest('[id^="colMenu-"]') && !e.target.closest('button[onclick^="toggleColumnMenu"]')) {
+        document.querySelectorAll('[id^="colMenu-"]').forEach((m) => m.classList.add('hidden'));
+      }
+    });
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        if (!document.getElementById('cardModalBackdrop').classList.contains('hidden')) closeCardModal();
+        if (!document.getElementById('quickCreateBackdrop').classList.contains('hidden')) closeQuickCreateModal();
+        if (!document.getElementById('confirmModalBackdrop').classList.contains('hidden')) closeConfirmModal();
+      }
+    });
+
+    // ==================== INICIALIZAÇÃO ====================
+    window.addEventListener('DOMContentLoaded', () => {
+      document.getElementById('boardTitleDisplay').innerText =
+        appState.boardTitle || 'Pedidos e entregas da impressão 3D';
+      setBackgroundTheme(appState.theme || 'default');
+      switchTab('board');
+    });
+  </script>
+</body>
+</html>
